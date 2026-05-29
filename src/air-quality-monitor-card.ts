@@ -2,6 +2,7 @@ import { LitElement, html, css, nothing, PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import type { HomeAssistant } from 'custom-card-helpers';
+import { fireEvent } from 'custom-card-helpers';
 import type { AirQualityCardConfig, MetricData, HistoryPoint } from './types';
 import {
   CARD_VERSION,
@@ -113,6 +114,11 @@ export class AirQualityMonitorCard extends LitElement {
     return config.show_sparklines !== false;
   }
 
+  /** Open the more-info dialog for an entity */
+  private _handleMoreInfo(entityId: string): void {
+    fireEvent(this, 'hass-more-info', { entityId });
+  }
+
   protected render(): unknown {
     if (!this._config) return nothing;
 
@@ -151,6 +157,7 @@ export class AirQualityMonitorCard extends LitElement {
                   class="entity-cell ${classMap({
                     unavailable: data.unavailable,
                   })}"
+                  @click=${() => this._handleMoreInfo(data.config.entity)}
                 >
                   <aqm-gauge
                     .value=${data.stateNumeric}
@@ -227,6 +234,7 @@ export class AirQualityMonitorCard extends LitElement {
         transition: background 0.2s, box-shadow 0.2s;
         box-sizing: border-box;
         min-width: 0;
+        cursor: pointer;
       }
 
       .entity-cell:hover {
