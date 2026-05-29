@@ -10,7 +10,7 @@ import {
   DEFAULT_SPARKLINE_HOURS,
   DEFAULT_COMPACT,
 } from './const';
-import { resolveMetricData, fetchHistory } from './utils';
+import { resolveMetricData, fetchHistory, detectTrend } from './utils';
 import './editor';
 
 @customElement('air-quality-monitor-card')
@@ -48,7 +48,7 @@ export class AirQualityMonitorCard extends LitElement {
     const columns = this._config?.columns ?? DEFAULT_COLUMNS;
     const rows = Math.ceil(entities / columns);
     const title = this._config?.title ? 1 : 0;
-    const rowHeight = this._config?.compact ? 1.5 : 2.5;
+    const rowHeight = this._config?.compact ? 2 : 3;
     return Math.ceil(title + rows * rowHeight);
   }
 
@@ -108,7 +108,6 @@ export class AirQualityMonitorCard extends LitElement {
 
   /** Check whether a specific metric should show its sparkline */
   private _shouldShowSparkline(data: MetricData, config: AirQualityCardConfig): boolean {
-    // Per-entity setting takes precedence, then fall back to global setting
     const entitySetting = data.config.show_sparkline;
     if (entitySetting !== undefined) return entitySetting;
     return config.show_sparklines !== false;
@@ -137,7 +136,7 @@ export class AirQualityMonitorCard extends LitElement {
     return html`
       <ha-card>
         ${config.title
-          ? html`<h1 class="card-header">${config.title}</h1>`
+          ? html`<div class="card-header">${config.title}</div>`
           : nothing}
 
         <div
@@ -145,45 +144,43 @@ export class AirQualityMonitorCard extends LitElement {
           style="grid-template-columns: repeat(${columns}, 1fr)"
         >
           ${metrics.map(
-            (data) => html`
-              <div
-                class="entity-cell ${classMap({
-                  unavailable: data.unavailable,
-                })}"
-              >
-                <aqm-gauge
-                  .value=${data.stateNumeric}
-                  .min=${data.config.min ?? 0}
-                  .max=${data.config.max ?? 100}
-                  .severityColor=${data.severity.color}
-                  .name=${data.name}
-                  .unit=${data.unit}
-                  .showUnit=${data.config.show_unit !== false}
-                  .icon=${data.icon}
-                  .unavailable=${data.unavailable}
-                  .compact=${!!config.compact}
-                ></aqm-gauge>
+            (data) => {
+              const trend = detectTrend(data.history);
+              return html`
+                <div
+                  class="entity-cell ${classMap({
+                    unavailable: data.unavailable,
+                  })}"
+                >
+                  <aqm-gauge
+                    .value=${data.stateNumeric}
+                    .min=${data.config.min ?? 0}
+                    .max=${data.config.max ?? 100}
+                    .severityColor=${data.severity.color}
+                    .severityLabel=${data.severity.label}
+                    .name=${data.name}
+                    .unit=${data.unit}
+                    .showUnit=${data.config.show_unit !== false}
+                    .icon=${data.icon}
+                    .unavailable=${data.unavailable}
+                    .compact=${!!config.compact}
+                    .trend=${trend}
+                  ></aqm-gauge>
 
-                ${this._shouldShowSparkline(data, config)
-                  ? this._loading && data.history.length === 0
-? html`
-                         <aqm-sparkline
-                           .data=${data.history}
-                           .color=${data.severity.color}
-                           .severity=${data.config.severity as Record<string, number> | undefined}
-                           .min=${data.config.min ?? 0}
-                           .max=${data.config.max ?? 100}
-                         ></aqm-sparkline>
-                       `
-                    : html`
+                  ${this._shouldShowSparkline(data, config)
+                    ? html`
                         <aqm-sparkline
                           .data=${data.history}
                           .color=${data.severity.color}
+                          .severity=${data.config.severity as Record<string, number> | undefined}
+                          .min=${data.config.min ?? 0}
+                          .max=${data.config.max ?? 100}
                         ></aqm-sparkline>
                       `
-                  : nothing}
-              </div>
-            `,
+                    : nothing}
+                </div>
+              `;
+            },
           )}
         </div>
       </ha-card>
@@ -197,14 +194,14 @@ export class AirQualityMonitorCard extends LitElement {
       }
 
       ha-card {
-        padding: 16px;
+        padding: 20px;
         box-sizing: border-box;
       }
 
       .card-header {
         font-family: var(--paper-font-headline_-_font-family, inherit);
-        font-size: 24px;
-        font-weight: 400;
+        font-size: 22px;
+        font-weight: 600;
         color: var(--primary-text-color);
         margin: 0 0 16px 0;
         padding: 0;
@@ -223,11 +220,10 @@ export class AirQualityMonitorCard extends LitElement {
         );
         border: 1px solid var(--divider-color, rgba(0, 0, 0, 0.08));
         border-radius: 12px;
-        padding: 12px;
+        padding: 16px;
         display: flex;
         flex-direction: column;
-        align-items: center;
-        gap: 4px;
+        gap: 8px;
         transition: background 0.2s, box-shadow 0.2s;
         box-sizing: border-box;
         min-width: 0;
@@ -241,22 +237,13 @@ export class AirQualityMonitorCard extends LitElement {
       }
 
       .compact .entity-cell {
-        padding: 8px;
+        padding: 10px;
         border-radius: 8px;
-        gap: 2px;
+        gap: 4px;
       }
 
       .entity-cell.unavailable {
         opacity: 0.55;
-      }
-
-      .sparkline-skeleton {
-        width: 100%;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
       }
 
       .empty-state {

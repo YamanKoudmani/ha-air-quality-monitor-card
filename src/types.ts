@@ -48,6 +48,16 @@ export interface SeverityInfo {
   color: string;
 }
 
+/** Trend direction */
+export type TrendDirection = 'rising' | 'falling' | 'stable';
+
+/** Trend info for a metric */
+export interface TrendInfo {
+  direction: TrendDirection;
+  label: string;
+  arrow: string;
+}
+
 /** History data point */
 export interface HistoryPoint {
   timestamp: number;

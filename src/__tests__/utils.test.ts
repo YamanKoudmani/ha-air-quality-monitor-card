@@ -6,6 +6,7 @@ import {
   clamp,
   generateSparklinePath,
   generateSparklineAreaPath,
+  detectTrend,
 } from '../utils';
 import {
   getSeverity,
@@ -285,5 +286,41 @@ describe('Gauge arc length', () => {
     const ratio = 1;
     const filledLen = ratio * arcLength;
     expect(filledLen).toBeCloseTo(arcLength, 1);
+  });
+});
+
+// ─── detectTrend ──────────────────────────────────────────────────────
+describe('detectTrend', () => {
+  it('returns stable for empty history', () => {
+    expect(detectTrend([]).direction).toBe('stable');
+  });
+
+  it('returns stable for single point', () => {
+    expect(detectTrend([{ timestamp: 1, value: 10 }]).direction).toBe('stable');
+  });
+
+  it('returns stable for flat data', () => {
+    const data = Array.from({ length: 10 }, (_, i) => ({ timestamp: i, value: 50 }));
+    expect(detectTrend(data).direction).toBe('stable');
+  });
+
+  it('returns rising for increasing data', () => {
+    const data = Array.from({ length: 20 }, (_, i) => ({ timestamp: i, value: i * 10 }));
+    expect(detectTrend(data).direction).toBe('rising');
+  });
+
+  it('returns falling for decreasing data', () => {
+    const data = Array.from({ length: 20 }, (_, i) => ({ timestamp: i, value: 200 - i * 10 }));
+    expect(detectTrend(data).direction).toBe('falling');
+  });
+
+  it('returns stable for small fluctuations', () => {
+    const data = Array.from({ length: 20 }, (_, i) => ({ timestamp: i, value: 50 + Math.sin(i) }));
+    expect(detectTrend(data).direction).toBe('stable');
+  });
+
+  it('includes arrow in result', () => {
+    expect(detectTrend([]).arrow).toBe('→');
+    expect(detectTrend([{ timestamp: 1, value: 10 }]).arrow).toBe('→');
   });
 });

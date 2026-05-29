@@ -1,5 +1,5 @@
 import type { HomeAssistant } from 'custom-card-helpers';
-import type { HistoryPoint, MetricEntityConfig, MetricData, SeverityInfo } from './types';
+import type { HistoryPoint, MetricEntityConfig, MetricData, SeverityInfo, TrendInfo, TrendDirection } from './types';
 import { getSeverity, getDefaultIcon, getDefaultSeverityForEntity } from './const';
 
 /** Fetch entity history from HA */
@@ -181,4 +181,36 @@ export function debounce<T extends (...args: any[]) => void>(fn: T, delay: numbe
     clearTimeout(timer);
     timer = setTimeout(() => fn(...args), delay);
   }) as T;
+}
+
+/** Detect trend direction from history data */
+export function detectTrend(history: HistoryPoint[]): TrendInfo {
+  if (!history || history.length < 2) {
+    return { direction: 'stable', label: 'stable', arrow: '→' };
+  }
+
+  // Compare recent values (last 25%) to earlier values (first 25%)
+  const recentStart = Math.floor(history.length * 0.75);
+  const earlyEnd = Math.floor(history.length * 0.25);
+
+  const recentSlice = history.slice(recentStart);
+  const earlySlice = history.slice(0, Math.max(earlyEnd, 1));
+
+  const recentAvg = recentSlice.reduce((s, p) => s + p.value, 0) / recentSlice.length;
+  const earlyAvg = earlySlice.reduce((s, p) => s + p.value, 0) / earlySlice.length;
+
+  // Threshold: 5% of the range or at least 1 unit
+  const allValues = history.map(p => p.value);
+  const range = Math.max(...allValues) - Math.min(...allValues);
+  const threshold = Math.max(range * 0.05, 1);
+
+  const diff = recentAvg - earlyAvg;
+
+  if (diff > threshold) {
+    return { direction: 'rising', label: 'rising', arrow: '↑' };
+  } else if (diff < -threshold) {
+    return { direction: 'falling', label: 'falling', arrow: '↓' };
+  } else {
+    return { direction: 'stable', label: 'stable', arrow: '→' };
+  }
 }
