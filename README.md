@@ -1,16 +1,19 @@
 # Air Quality Monitor Card
 
-A custom [Home Assistant](https://www.home-assistant.io/) Lovelace card for monitoring air quality sensors with color-coded gauges and trend sparklines.
+A custom [Home Assistant](https://www.home-assistant.io/) Lovelace card for monitoring air quality sensors with color-coded progress bars, severity indicators, and trend sparklines.
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
 
 ## Features
 
-- **Circular arc gauges** for each air quality metric (PM2.5, PM10, CO2, VOC, temperature, humidity, etc.)
+- **Horizontal progress bars** with severity-based coloring for each metric (PM2.5, PM10, CO2, VOC, temperature, humidity, etc.)
 - **Color-coded severity levels** — Good (green), Moderate (yellow), Sensitive (orange), Unhealthy (red), Very Unhealthy (purple), Hazardous (maroon)
-- **Trend sparklines** showing historical data over a configurable time window
+- **Status indicators** — colored dot + severity label (e.g., "Moderate", "Good")
+- **Trend detection** — rising ↑, stable →, or falling ↓ based on recent history
+- **Per-point colored sparklines** — line color changes based on severity at each data point
+- **Scale labels** — min, severity, and max values below the progress bar
 - **Visual editor** for easy configuration in the Lovelace UI
-- **Responsive layout** with configurable grid columns
+- **Responsive layout** with configurable grid columns (default: 2)
 - **Compact mode** for dense dashboards
 - **Auto-detection** of common air quality metrics with sensible defaults
 - **Theme-aware** — uses your Home Assistant theme colors
@@ -51,7 +54,7 @@ The card includes a visual editor. Add it via the Lovelace card picker:
 ```yaml
 type: custom:air-quality-monitor-card
 title: Living Room Air Quality
-columns: 3
+columns: 2
 show_sparklines: true
 sparkline_hours: 24
 compact: false
@@ -59,7 +62,7 @@ entities:
   - entity: sensor.living_room_pm25
     name: PM2.5
     icon: mdi:air-filter
-    unit: "\u00b5g/m\u00b3"
+    unit: "µg/m³"
     min: 0
     max: 150
     severity:
@@ -68,7 +71,7 @@ entities:
       unhealthy_sensitive: 55
       unhealthy: 150
   - entity: sensor.living_room_co2
-    name: "CO\u2082"
+    name: "CO₂"
     icon: mdi:molecule-co2
     unit: ppm
     min: 400
@@ -93,10 +96,10 @@ entities:
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `title` | string | _(none)_ | Card title displayed at the top |
-| `columns` | number | `3` | Number of columns in the grid (1-6) |
-| `show_sparklines` | boolean | `true` | Show trend sparklines below each gauge |
+| `columns` | number | `2` | Number of columns in the grid (1-6) |
+| `show_sparklines` | boolean | `true` | Show trend sparklines below each metric |
 | `sparkline_hours` | number | `24` | History window for sparklines (1-168 hours) |
-| `compact` | boolean | `false` | Compact mode with smaller gauges |
+| `compact` | boolean | `false` | Compact mode with smaller text and bars |
 | `entities` | array | **required** | List of metric entities to display |
 
 ### Entity Options
@@ -107,10 +110,10 @@ entities:
 | `name` | string | _(auto)_ | Display name (defaults to friendly name) |
 | `icon` | string | _(auto)_ | MDI icon (auto-detected for common metrics) |
 | `unit` | string | _(auto)_ | Unit of measurement |
-| `min` | number | _(auto)_ | Minimum gauge value |
-| `max` | number | _(auto)_ | Maximum gauge value |
-| `precision` | number | _(auto)_ | Decimal places for the value display |
-| `color` | string | _(auto)_ | Override the severity color |
+| `min` | number | _(auto)_ | Minimum bar value |
+| `max` | number | _(auto)_ | Maximum bar value |
+| `show_sparkline` | boolean | `true` | Show/hide sparkline for this entity |
+| `show_unit` | boolean | `true` | Show/hide unit next to the value |
 | `severity` | object | _(auto)_ | Custom severity thresholds |
 
 ### Severity Thresholds
@@ -154,6 +157,9 @@ npm start
 
 # Production build
 npm run build
+
+# Run tests
+npm test
 ```
 
 The built file will be in `dist/air-quality-monitor-card.js`.
