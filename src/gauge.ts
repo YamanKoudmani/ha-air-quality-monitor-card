@@ -81,7 +81,7 @@ export class AqmGauge extends LitElement {
         <!-- Scale labels -->
         <div class="scale-labels" style="color: ${labelColor}">
           <span>${this.min}</span>
-          <span>${this.unavailable ? '—' : this.severityLabel}</span>
+          <span>${this.unavailable ? '—' : formatValue(this.midValue)}</span>
           <span>${this.max}</span>
         </div>
       </div>
