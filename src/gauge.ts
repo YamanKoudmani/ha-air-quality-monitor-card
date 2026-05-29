@@ -8,8 +8,8 @@ import { describeArc, formatValue } from './utils';
  * Speedometer-style arc: 270° sweep with 90° gap at the bottom.
  * Arc goes clockwise from lower-left (225°) through top to lower-right (135°).
  *
- * The filled portion uses stroke-dasharray on the same arc path as the
- * background, with pathLength="100" for predictable dash calculations.
+ * The filled portion uses stroke-dasharray with the computed arc length
+ * to reliably show the progress arc.
  */
 @customElement('aqm-gauge')
 export class AqmGauge extends LitElement {
@@ -32,6 +32,7 @@ export class AqmGauge extends LitElement {
   private readonly radius = 28;
   private readonly arcStart = 225;
   private readonly arcEnd = 135;
+  private readonly totalSweep = 270;
   private readonly strokeWidth = 7;
 
   private get ratio(): number {
@@ -39,6 +40,11 @@ export class AqmGauge extends LitElement {
     if (this.max === this.min) return 0;
     const r = (this.value - this.min) / (this.max - this.min);
     return Math.max(0, Math.min(1, r));
+  }
+
+  /** Total arc length of the 270° gauge arc */
+  private get arcLength(): number {
+    return 2 * Math.PI * this.radius * (this.totalSweep / 360);
   }
 
   private get arcPath(): string {
@@ -54,7 +60,9 @@ export class AqmGauge extends LitElement {
     const subColor = this.unavailable
       ? 'var(--disabled-text-color, #9e9e9e)'
       : 'var(--secondary-text-color)';
-    const filledLength = this.ratio * 100;
+
+    const filledLen = this.ratio * this.arcLength;
+    const totalLen = this.arcLength;
 
     return html`
       <div class="gauge-container">
@@ -82,10 +90,9 @@ export class AqmGauge extends LitElement {
             stroke-width="${this.strokeWidth}"
             fill="none"
             stroke-linecap="round"
-            pathLength="100"
           />
 
-          <!-- Foreground arc (uses same path with stroke-dasharray to show fill ratio) -->
+          <!-- Foreground arc (stroke-dasharray shows only the filled portion) -->
           ${this.ratio > 0 && !this.unavailable
             ? html`
                 <path
@@ -94,8 +101,7 @@ export class AqmGauge extends LitElement {
                   stroke-width="${this.strokeWidth}"
                   fill="none"
                   stroke-linecap="round"
-                  pathLength="100"
-                  stroke-dasharray="${filledLength} 100"
+                  stroke-dasharray="${filledLen.toFixed(2)} ${totalLen.toFixed(2)}"
                   class="arc-fill"
                 />
               `

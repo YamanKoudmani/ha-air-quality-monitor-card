@@ -166,33 +166,15 @@ export class AirQualityMonitorCard extends LitElement {
 
                 ${this._shouldShowSparkline(data, config)
                   ? this._loading && data.history.length === 0
-                    ? html`
-                        <div class="sparkline-skeleton">
-                          <svg
-                            width="100%"
-                            height="40"
-                            viewBox="0 0 120 40"
-                            preserveAspectRatio="none"
-                          >
-                            <rect
-                              x="0"
-                              y="15"
-                              width="120"
-                              height="10"
-                              rx="5"
-                              fill="var(--secondary-background-color)"
-                              opacity="0.4"
-                            >
-                              <animate
-                                attributeName="opacity"
-                                values="0.4;0.8;0.4"
-                                dur="2s"
-                                repeatCount="indefinite"
-                              />
-                            </rect>
-                          </svg>
-                        </div>
-                      `
+? html`
+                         <aqm-sparkline
+                           .data=${data.history}
+                           .color=${data.severity.color}
+                           .severity=${data.config.severity as Record<string, number> | undefined}
+                           .min=${data.config.min ?? 0}
+                           .max=${data.config.max ?? 100}
+                         ></aqm-sparkline>
+                       `
                     : html`
                         <aqm-sparkline
                           .data=${data.history}

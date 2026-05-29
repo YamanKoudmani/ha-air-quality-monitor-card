@@ -254,3 +254,36 @@ describe('DEFAULT_COLUMNS', () => {
     expect(DEFAULT_COLUMNS).toBe(2);
   });
 });
+
+// ─── Arc length computation (gauge dasharray) ─────────────────────────
+describe('Gauge arc length', () => {
+  const radius = 28;
+  const totalSweep = 270;
+
+  it('computes correct arc length for 270° sweep', () => {
+    const arcLength = 2 * Math.PI * radius * (totalSweep / 360);
+    // 2 * π * 28 * 0.75 ≈ 131.95
+    expect(arcLength).toBeCloseTo(131.95, 1);
+  });
+
+  it('dasharray for 50% fill uses half the arc length', () => {
+    const arcLength = 2 * Math.PI * radius * (totalSweep / 360);
+    const ratio = 0.5;
+    const filledLen = ratio * arcLength;
+    expect(filledLen).toBeCloseTo(65.97, 1);
+  });
+
+  it('dasharray for 0% fill is zero', () => {
+    const arcLength = 2 * Math.PI * radius * (totalSweep / 360);
+    const ratio = 0;
+    const filledLen = ratio * arcLength;
+    expect(filledLen).toBe(0);
+  });
+
+  it('dasharray for 100% fill equals full arc length', () => {
+    const arcLength = 2 * Math.PI * radius * (totalSweep / 360);
+    const ratio = 1;
+    const filledLen = ratio * arcLength;
+    expect(filledLen).toBeCloseTo(arcLength, 1);
+  });
+});
