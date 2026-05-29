@@ -54,7 +54,7 @@ export class AirQualityMonitorCardEditor extends LitElement {
     if (field === 'name') {
       value = value || undefined;
     }
-    if (field === 'show_sparkline') {
+    if (field === 'show_sparkline' || field === 'show_unit') {
       value = (ev.target as HTMLInputElement).checked;
     }
     this._updateEntity(index, { [field]: value });

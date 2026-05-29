@@ -4,7 +4,7 @@ export const CARD_VERSION = '1.0.0';
 export const CARD_TAG = 'air-quality-monitor-card';
 export const EDITOR_TAG = 'air-quality-monitor-card-editor';
 
-export const DEFAULT_COLUMNS = 3;
+export const DEFAULT_COLUMNS = 2;
 export const DEFAULT_SPARKLINE_HOURS = 24;
 export const DEFAULT_SHOW_SPARKLINES = true;
 export const DEFAULT_COMPACT = false;
@@ -98,7 +98,9 @@ export function getSeverity(value: number | null, severity?: Record<string, numb
   }
 
   if (severity) {
-    for (const level of SEVERITY_ORDER) {
+    // Iterate from best (lowest threshold) to worst (highest threshold).
+    // Return the first level whose threshold the value meets or exceeds.
+    for (const level of [...SEVERITY_ORDER].reverse()) {
       const threshold = severity[level];
       if (threshold !== undefined && value <= threshold) {
         return { level, label: SEVERITY_LABELS[level], color: SEVERITY_COLORS[level] };

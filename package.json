@@ -22,7 +22,9 @@
     "start": "rollup -c rollup.config.js --watch",
     "build": "npm run clean && npm run rollup",
     "clean": "rimraf dist",
-    "rollup": "rollup -c rollup.config.js"
+    "rollup": "rollup -c rollup.config.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "custom-card-helpers": "^1.9.0",
@@ -37,6 +39,7 @@
     "rimraf": "^6.0.0",
     "rollup": "^4.24.0",
     "tslib": "^2.8.0",
-    "typescript": "^5.6.0"
+    "typescript": "^5.6.0",
+    "vitest": "^4.1.7"
   }
 }

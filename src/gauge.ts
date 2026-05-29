@@ -7,6 +7,9 @@ import { describeArc, formatValue } from './utils';
  *
  * Speedometer-style arc: 270° sweep with 90° gap at the bottom.
  * Arc goes clockwise from lower-left (225°) through top to lower-right (135°).
+ *
+ * The filled portion uses stroke-dasharray on the same arc path as the
+ * background, with pathLength="100" for predictable dash calculations.
  */
 @customElement('aqm-gauge')
 export class AqmGauge extends LitElement {
@@ -29,7 +32,6 @@ export class AqmGauge extends LitElement {
   private readonly radius = 28;
   private readonly arcStart = 225;
   private readonly arcEnd = 135;
-  private readonly totalSweep = 270;
   private readonly strokeWidth = 7;
 
   private get ratio(): number {
@@ -39,17 +41,8 @@ export class AqmGauge extends LitElement {
     return Math.max(0, Math.min(1, r));
   }
 
-  private get filledAngle(): number {
-    return (this.arcStart + this.ratio * this.totalSweep) % 360;
-  }
-
-  private get backgroundArcPath(): string {
+  private get arcPath(): string {
     return describeArc(this.cx, this.cy, this.radius, this.arcStart, this.arcEnd);
-  }
-
-  private get filledArcPath(): string {
-    if (this.value === null || this.value === undefined || this.ratio <= 0) return '';
-    return describeArc(this.cx, this.cy, this.radius, this.arcStart, this.filledAngle);
   }
 
   render() {
@@ -61,6 +54,7 @@ export class AqmGauge extends LitElement {
     const subColor = this.unavailable
       ? 'var(--disabled-text-color, #9e9e9e)'
       : 'var(--secondary-text-color)';
+    const filledLength = this.ratio * 100;
 
     return html`
       <div class="gauge-container">
@@ -83,22 +77,25 @@ export class AqmGauge extends LitElement {
         >
           <!-- Background arc -->
           <path
-            d="${this.backgroundArcPath}"
+            d="${this.arcPath}"
             stroke="var(--divider-color, #e0e0e0)"
             stroke-width="${this.strokeWidth}"
             fill="none"
             stroke-linecap="round"
+            pathLength="100"
           />
 
-          <!-- Foreground arc -->
+          <!-- Foreground arc (uses same path with stroke-dasharray to show fill ratio) -->
           ${this.ratio > 0 && !this.unavailable
             ? html`
                 <path
-                  d="${this.filledArcPath}"
+                  d="${this.arcPath}"
                   stroke="${arcColor}"
                   stroke-width="${this.strokeWidth}"
                   fill="none"
                   stroke-linecap="round"
+                  pathLength="100"
+                  stroke-dasharray="${filledLength} 100"
                   class="arc-fill"
                 />
               `

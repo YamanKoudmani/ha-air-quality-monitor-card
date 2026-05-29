@@ -121,7 +121,7 @@ export function describeArc(
   return `M ${start.x.toFixed(2)} ${start.y.toFixed(2)} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${end.x.toFixed(2)} ${end.y.toFixed(2)}`;
 }
 
-function polarToCartesian(cx: number, cy: number, radius: number, angleDeg: number) {
+export function polarToCartesian(cx: number, cy: number, radius: number, angleDeg: number) {
   const angleRad = ((angleDeg - 90) * Math.PI) / 180;
   return {
     x: cx + radius * Math.cos(angleRad),
