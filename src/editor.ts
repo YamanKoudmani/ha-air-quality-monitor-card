@@ -20,165 +20,120 @@ export class AirQualityMonitorCardEditor extends LitElement {
     this._config = config;
   }
 
-  /* ---------- helpers ---------- */
+  private _valueChanged(ev: CustomEvent): void {
+    const target = ev.target as any;
+    const configValue = target.configValue;
+    if (!configValue) return;
 
-  /** Return all sensor entities sorted by friendly name */
-  private _getSensorEntities(): Array<{ id: string; name: string }> {
-    if (!this.hass) return [];
-    return Object.keys(this.hass.states)
-      .filter((id) => id.startsWith('sensor.'))
-      .map((id) => ({
-        id,
-        name:
-          this.hass!.states[id].attributes.friendly_name || id,
-      }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+    let value: any;
+    if (target.tagName === 'HA-ENTITY-PICKER') {
+      value = ev.detail.value;
+    } else if (target.tagName === 'HA-SWITCH') {
+      value = target.checked;
+    } else {
+      value = target.value;
+    }
+
+    if (this._config && (this._config as any)[configValue] === value) return;
+
+    this._config = { ...this._config!, [configValue]: value };
+    fireEvent(this, 'config-changed', { config: this._config });
   }
 
-  /** Deep-clone the entities array so we never mutate the original config */
-  private _cloneEntities(
-    entities?: MetricEntityConfig[],
-  ): MetricEntityConfig[] {
-    return (entities ?? []).map((e) => ({ ...e }));
+  private _entityChanged(index: number, ev: CustomEvent): void {
+    const value = ev.detail.value;
+    const entities = this._config?.entities?.map((e, i) =>
+      i === index ? { ...e, entity: value } : e,
+    );
+    if (!entities) return;
+    this._config = { ...this._config!, entities };
+    fireEvent(this, 'config-changed', { config: this._config });
   }
 
-  /* ---------- event handlers ---------- */
-
-  private _handleTitleChange(e: Event): void {
-    const value = (e.target as HTMLInputElement).value;
-    this._updateConfig({ ...this._config!, title: value || undefined });
-  }
-
-  private _handleColumnsChange(e: Event): void {
-    const raw = (e.target as HTMLInputElement).value;
-    const value = parseInt(raw, 10);
-    if (isNaN(value) || value < 1 || value > 6) return;
-    this._updateConfig({ ...this._config!, columns: value });
-  }
-
-  private _handleCompactChange(e: Event): void {
-    const checked = (e.target as HTMLInputElement).checked;
-    this._updateConfig({ ...this._config!, compact: checked });
-  }
-
-  private _handleSparklineToggle(e: Event): void {
-    const checked = (e.target as HTMLInputElement).checked;
-    this._updateConfig({ ...this._config!, show_sparklines: checked });
-  }
-
-  private _handleSparklineHoursChange(e: Event): void {
-    const raw = (e.target as HTMLInputElement).value;
-    const value = parseInt(raw, 10);
-    if (isNaN(value) || value < 1 || value > 168) return;
-    this._updateConfig({ ...this._config!, sparkline_hours: value });
-  }
-
-  private _handleEntityChange(
-    index: number,
-    field: 'entity' | 'name',
-    value: string,
-  ): void {
-    const entities = this._cloneEntities(this._config?.entities);
-    if (!entities[index]) return;
-    entities[index] = { ...entities[index], [field]: value };
-    this._updateConfig({ ...this._config!, entities });
+  private _entityNameChanged(index: number, ev: Event): void {
+    const value = (ev.target as HTMLInputElement).value;
+    const entities = this._config?.entities?.map((e, i) =>
+      i === index ? { ...e, name: value || undefined } : e,
+    );
+    if (!entities) return;
+    this._config = { ...this._config!, entities };
+    fireEvent(this, 'config-changed', { config: this._config });
   }
 
   private _removeEntity(index: number): void {
-    const entities = this._cloneEntities(this._config?.entities);
+    const entities = [...(this._config?.entities || [])];
     entities.splice(index, 1);
-    this._updateConfig({ ...this._config!, entities });
+    this._config = { ...this._config!, entities };
+    fireEvent(this, 'config-changed', { config: this._config });
   }
 
   private _addEntity(): void {
-    const entities = this._cloneEntities(this._config?.entities);
-    entities.push({ entity: '', name: '' });
-    this._updateConfig({ ...this._config!, entities });
+    const entities = [...(this._config?.entities || []), { entity: '' }];
+    this._config = { ...this._config!, entities };
+    fireEvent(this, 'config-changed', { config: this._config });
   }
-
-  /** Persist the new config and fire the event HA listens to */
-  private _updateConfig(config: AirQualityCardConfig): void {
-    this._config = config;
-    fireEvent(this, 'config-changed', { config });
-  }
-
-  /* ---------- render ---------- */
 
   protected render(): unknown {
     if (!this.hass) {
-      return html`
-        <div class="loading-state">
-          <ha-circular-progress indeterminate></ha-circular-progress>
-          <p>Loading entities…</p>
-        </div>
-      `;
+      return html`<div class="loading">Loading…</div>`;
     }
 
     const config = this._config ?? ({} as AirQualityCardConfig);
     const entities = config.entities ?? [];
-    const sensors = this._getSensorEntities();
 
     return html`
       <div class="editor">
         <!-- Title -->
         <div class="section">
-          <h3 class="section-title">Title</h3>
           <ha-textfield
             label="Card title (optional)"
             .value=${config.title ?? ''}
-            @input=${this._handleTitleChange}
+            .configValue=${'title'}
+            @input=${this._valueChanged}
           ></ha-textfield>
         </div>
 
-        <!-- Layout options -->
+        <!-- Layout -->
         <div class="section">
           <h3 class="section-title">Layout</h3>
 
-          <div class="row">
-            <ha-textfield
-              type="number"
-              label="Columns"
-              min="1"
-              max="6"
-              step="1"
-              .value=${String(config.columns ?? DEFAULT_COLUMNS)}
-              @input=${this._handleColumnsChange}
-            ></ha-textfield>
-          </div>
+          <ha-textfield
+            type="number"
+            label="Columns (1-6)"
+            min="1"
+            max="6"
+            .value=${String(config.columns ?? DEFAULT_COLUMNS)}
+            .configValue=${'columns'}
+            @input=${this._valueChanged}
+          ></ha-textfield>
 
-          <div class="row">
-            <ha-formfield label="Compact mode">
-              <ha-switch
-                ?checked=${config.compact ?? DEFAULT_COMPACT}
-                @change=${this._handleCompactChange}
-              ></ha-switch>
-            </ha-formfield>
-          </div>
+          <ha-formfield label="Compact mode">
+            <ha-switch
+              .checked=${config.compact ?? DEFAULT_COMPACT}
+              .configValue=${'compact'}
+              @change=${this._valueChanged}
+            ></ha-switch>
+          </ha-formfield>
 
-          <div class="row">
-            <ha-formfield label="Show trend sparklines">
-              <ha-switch
-                ?checked=${config.show_sparklines ?? DEFAULT_SHOW_SPARKLINES}
-                @change=${this._handleSparklineToggle}
-              ></ha-switch>
-            </ha-formfield>
-          </div>
+          <ha-formfield label="Show trend sparklines">
+            <ha-switch
+              .checked=${config.show_sparklines ?? DEFAULT_SHOW_SPARKLINES}
+              .configValue=${'show_sparklines'}
+              @change=${this._valueChanged}
+            ></ha-switch>
+          </ha-formfield>
 
           ${(config.show_sparklines ?? DEFAULT_SHOW_SPARKLINES)
             ? html`
-                <div class="row">
-                  <ha-textfield
-                    type="number"
-                    label="Sparkline window (hours)"
-                    min="1"
-                    max="168"
-                    step="1"
-                    .value=${String(
-                      config.sparkline_hours ?? DEFAULT_SPARKLINE_HOURS,
-                    )}
-                    @input=${this._handleSparklineHoursChange}
-                  ></ha-textfield>
-                </div>
+                <ha-textfield
+                  type="number"
+                  label="Sparkline window (hours)"
+                  min="1"
+                  max="168"
+                  .value=${String(config.sparkline_hours ?? DEFAULT_SPARKLINE_HOURS)}
+                  .configValue=${'sparkline_hours'}
+                  @input=${this._valueChanged}
+                ></ha-textfield>
               `
             : nothing}
         </div>
@@ -187,68 +142,29 @@ export class AirQualityMonitorCardEditor extends LitElement {
         <div class="section">
           <h3 class="section-title">Entities</h3>
 
-          ${entities.length === 0
-            ? html`
-                <p class="empty-entities">
-                  No entities configured. Click <strong>Add entity</strong> below.
-                </p>
-              `
-            : html`
-                <div class="entities-header">
-                  <span class="col-picker">Entity</span>
-                  <span class="col-name">Display name</span>
-                  <span class="col-action"></span>
-                </div>
-              `}
-
           ${entities.map(
             (entity, index) => html`
               <div class="entity-row">
-                <!-- Entity picker -->
-                <select
-                  class="entity-picker"
+                <ha-entity-picker
+                  .hass=${this.hass}
                   .value=${entity.entity}
-                  @change=${(e: Event) =>
-                    this._handleEntityChange(
-                      index,
-                      'entity',
-                      (e.target as HTMLSelectElement).value,
-                    )}
-                >
-                  <option value="" ?selected=${!entity.entity}>
-                    Select an entity…
-                  </option>
-                  ${sensors.map(
-                    (s) => html`
-                      <option
-                        value=${s.id}
-                        ?selected=${s.id === entity.entity}
-                      >
-                        ${s.name}
-                      </option>
-                    `,
-                  )}
-                </select>
+                  label="Entity"
+                  allow-custom-entity
+                  @value-changed=${(ev: CustomEvent) => this._entityChanged(index, ev)}
+                ></ha-entity-picker>
 
-                <!-- Name override -->
                 <ha-textfield
-                  class="entity-name"
-                  label="Display name"
+                  label="Display name (optional)"
                   .value=${entity.name ?? ''}
-                  @input=${(e: Event) =>
-                    this._handleEntityChange(
-                      index,
-                      'name',
-                      (e.target as HTMLInputElement).value,
-                    )}
+                  @input=${(ev: Event) => this._entityNameChanged(index, ev)}
                 ></ha-textfield>
 
-                <!-- Remove button -->
                 <ha-button
                   class="remove-btn"
                   ?disabled=${entities.length <= 1}
                   @click=${() => this._removeEntity(index)}
                 >
+                  <ha-icon icon="mdi:delete" style="--mdc-icon-size:18px;margin-right:4px;"></ha-icon>
                   Remove
                 </ha-button>
               </div>
@@ -256,6 +172,7 @@ export class AirQualityMonitorCardEditor extends LitElement {
           )}
 
           <ha-button class="add-btn" @click=${this._addEntity}>
+            <ha-icon icon="mdi:plus" style="--mdc-icon-size:18px;margin-right:4px;"></ha-icon>
             Add entity
           </ha-button>
         </div>
@@ -263,52 +180,42 @@ export class AirQualityMonitorCardEditor extends LitElement {
     `;
   }
 
-  /* ---------- styles ---------- */
-
-  static get styles(): ReturnType<typeof css> {
+  static get styles() {
     return css`
       :host {
         display: block;
       }
 
       .editor {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
         padding: 8px 0;
       }
 
-      .loading-state {
+      .loading {
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 48px 16px;
-        gap: 16px;
+        padding: 32px;
         color: var(--secondary-text-color);
       }
 
-      .loading-state p {
-        margin: 0;
-        font-size: 14px;
-      }
-
       .section {
-        margin-bottom: 24px;
-        padding: 0 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
       }
 
       .section-title {
         font-size: 14px;
         font-weight: 500;
         color: var(--primary-text-color);
-        margin: 0 0 12px 0;
-        padding-bottom: 8px;
+        margin: 0 0 4px 0;
+        padding-bottom: 4px;
         border-bottom: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
         text-transform: uppercase;
         letter-spacing: 0.5px;
-      }
-
-      .row {
-        margin-bottom: 8px;
-        width: 100%;
       }
 
       ha-textfield {
@@ -316,89 +223,42 @@ export class AirQualityMonitorCardEditor extends LitElement {
       }
 
       ha-formfield {
-        display: flex;
-        align-items: center;
-      }
-
-      /* ------ entities list ------ */
-
-      .entities-header {
-        display: grid;
-        grid-template-columns: 2fr 2fr auto;
-        gap: 8px;
-        align-items: center;
-        margin-bottom: 4px;
-        padding: 0 4px;
-        font-size: 11px;
-        font-weight: 500;
-        color: var(--secondary-text-color);
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
+        display: block;
+        margin-top: 4px;
       }
 
       .entity-row {
-        display: grid;
-        grid-template-columns: 2fr 2fr auto;
+        display: flex;
+        flex-direction: column;
         gap: 8px;
-        align-items: start;
-        margin-bottom: 8px;
-        padding: 8px;
-        background: var(
-          --ha-card-background,
-          var(--card-background-color, transparent)
-        );
-        border: 1px solid var(--divider-color, rgba(0, 0, 0, 0.08));
+        padding: 12px;
+        background: var(--secondary-background-color, #f5f5f5);
         border-radius: 8px;
-      }
-
-      .entity-picker {
-        width: 100%;
-        padding: 8px 4px;
-        font-size: 14px;
-        font-family: var(--paper-font-body_-_font-family, inherit);
-        color: var(--primary-text-color);
-        background: var(--input-background-color, var(--secondary-background-color, #f5f5f5));
-        border: 1px solid var(--divider-color, rgba(0, 0, 0, 0.15));
-        border-radius: 4px;
-        outline: none;
-        cursor: pointer;
-        min-height: 40px;
-        box-sizing: border-box;
-      }
-
-      .entity-picker:focus {
-        border-color: var(--primary-color);
-      }
-
-      .entity-name {
-        width: 100%;
+        margin-bottom: 8px;
       }
 
       .remove-btn {
         --mdc-theme-primary: var(--error-color, #db4437);
-        white-space: nowrap;
-        height: 40px;
-      }
-
-      .empty-entities {
-        margin: 0 0 12px 0;
-        font-size: 13px;
-        color: var(--secondary-text-color);
-        font-style: italic;
+        align-self: flex-end;
       }
 
       .add-btn {
         margin-top: 4px;
       }
 
-      /* responsive: stack entity rows on very narrow screens */
-      @media (max-width: 500px) {
+      @media (min-width: 600px) {
         .entity-row {
-          grid-template-columns: 1fr;
-          gap: 6px;
+          flex-direction: row;
+          align-items: flex-start;
         }
-        .entities-header {
-          display: none;
+
+        .entity-row > * {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .entity-row > ha-button {
+          flex: 0 0 auto;
         }
       }
     `;

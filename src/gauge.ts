@@ -2,13 +2,6 @@
 import { customElement, property } from 'lit/decorators.js';
 import { describeArc, formatValue } from './utils';
 
-/** @ts-ignore — ha-icon is provided by HA at runtime */
-declare global {
-  interface HTMLElementTagNameMap {
-    'ha-icon': HTMLElement & { icon: string };
-  }
-}
-
 /**
  * Circular arc gauge component (aqm-gauge)
  *
@@ -33,7 +26,7 @@ export class AqmGauge extends LitElement {
   @property({ type: String })
   severityColor = '#9e9e9e';
 
-  /** Metric name label displayed at the bottom */
+  /** Metric name label displayed below the value */
   @property({ type: String })
   name = '';
 
@@ -53,15 +46,13 @@ export class AqmGauge extends LitElement {
   @property({ type: Boolean, reflect: true })
   compact = false;
 
-  // Gauge geometry
-  // Arc sweeps 240 degrees clockwise from 150 to 390 degrees.
-  // SVG viewBox is 120 x 80; arc center at (68, 46), radius 28.
-  private readonly cx = 68;
-  private readonly cy = 46;
-  private readonly radius = 28;
+  // Gauge geometry — 240° arc from 150° to 390°
+  private readonly cx = 60;
+  private readonly cy = 42;
+  private readonly radius = 30;
   private readonly startAngle = 150;
   private readonly endAngle = 390;
-  private readonly strokeWidth = 8;
+  private readonly strokeWidth = 7;
 
   /** 0..1 fraction of the arc that should be filled */
   private get ratio(): number {
@@ -89,107 +80,95 @@ export class AqmGauge extends LitElement {
   render() {
     const displayValue = this.unavailable ? '\u2014' : formatValue(this.value);
     const displayUnit = this.unavailable ? '' : this.unit;
-    const arcColor = this.unavailable ? '#e0e0e0' : this.severityColor;
-    const labelColor = this.unavailable ? '#9e9e9e' : 'var(--secondary-text-color, #888888)';
-    const showIcon = !!(this.icon && !this.compact && !this.unavailable);
+    const arcColor = this.unavailable ? '#bdbdbd' : this.severityColor;
+    const textColor = this.unavailable
+      ? 'var(--disabled-text-color, #9e9e9e)'
+      : 'var(--primary-text-color)';
+    const subColor = this.unavailable
+      ? 'var(--disabled-text-color, #9e9e9e)'
+      : 'var(--secondary-text-color)';
 
     return html`
-      <svg
-        viewBox="0 0 120 80"
-        part="svg"
-        class="gauge-svg"
-        role="img"
-        aria-label="${this.name}: ${displayValue}${displayUnit ? ' ' + displayUnit : ''}"
-      >
-        <!-- Background arc (full sweep, light gray) -->
-        <path
-          d="${this.backgroundArcPath}"
-          stroke="#e0e0e0"
-          stroke-width="${this.strokeWidth}"
-          fill="none"
-          stroke-linecap="round"
-          class="arc-bg"
-        />
-
-        <!-- Foreground arc (partial sweep, severity colored) -->
-        ${this.value !== null && !this.unavailable
-          ? html`
-              <path
-                d="${this.filledArcPath}"
-                stroke="${arcColor}"
-                stroke-width="${this.strokeWidth}"
-                fill="none"
-                stroke-linecap="round"
-                class="arc-fill"
-              />
-            `
+      <div class="gauge-container">
+        ${this.icon && !this.compact && !this.unavailable
+          ? html`<ha-icon .icon=${this.icon} class="gauge-icon"></ha-icon>`
           : nothing}
 
-        <!-- Icon -->
-        ${showIcon
-          ? html`
-              <foreignObject x="48" y="6" width="24" height="24">
-                <ha-icon .icon="${this.icon}"></ha-icon>
-              </foreignObject>
-            `
-          : nothing}
-
-        <!-- Value text -->
-        <text
-          x="60"
-          y="${this.compact ? 48 : 52}"
-          text-anchor="middle"
-          fill="${this.unavailable ? '#9e9e9e' : 'var(--primary-text-color, #212121)'}"
-          class="value-text"
+        <svg
+          viewBox="0 0 120 75"
+          class="gauge-svg"
+          role="img"
+          aria-label="${this.name}: ${displayValue}${displayUnit ? ' ' + displayUnit : ''}"
         >
-          ${displayValue}
-        </text>
+          <!-- Background arc -->
+          <path
+            d="${this.backgroundArcPath}"
+            stroke="var(--divider-color, #e0e0e0)"
+            stroke-width="${this.strokeWidth}"
+            fill="none"
+            stroke-linecap="round"
+          />
 
-        <!-- Unit label -->
-        ${displayUnit
-          ? html`
-              <text
-                x="60"
-                y="${this.compact ? 57 : 61}"
-                text-anchor="middle"
-                fill="${labelColor}"
-                class="unit-text"
-              >
-                ${displayUnit}
-              </text>
-            `
-          : nothing}
+          <!-- Foreground arc (severity colored) -->
+          ${this.value !== null && !this.unavailable
+            ? html`
+                <path
+                  d="${this.filledArcPath}"
+                  stroke="${arcColor}"
+                  stroke-width="${this.strokeWidth}"
+                  fill="none"
+                  stroke-linecap="round"
+                  class="arc-fill"
+                />
+              `
+            : nothing}
 
-        <!-- Unavailable indicator -->
-        ${this.unavailable
-          ? html`
-              <text
-                x="60"
-                y="52"
-                text-anchor="middle"
-                fill="#9e9e9e"
-                class="unavailable-text"
-              >
-                Unavailable
-              </text>
-            `
-          : nothing}
+          <!-- Value text -->
+          <text
+            x="60"
+            y="${this.compact ? 44 : 46}"
+            text-anchor="middle"
+            fill="${textColor}"
+            class="value-text"
+          >
+            ${displayValue}
+          </text>
 
-        <!-- Metric name at the bottom -->
+          <!-- Unit text -->
+          ${displayUnit
+            ? html`
+                <text
+                  x="60"
+                  y="${this.compact ? 54 : 56}"
+                  text-anchor="middle"
+                  fill="${subColor}"
+                  class="unit-text"
+                >
+                  ${displayUnit}
+                </text>
+              `
+            : nothing}
+
+          <!-- Unavailable label -->
+          ${this.unavailable
+            ? html`
+                <text
+                  x="60"
+                  y="46"
+                  text-anchor="middle"
+                  fill="var(--disabled-text-color, #9e9e9e)"
+                  class="unavailable-text"
+                >
+                  N/A
+                </text>
+              `
+            : nothing}
+        </svg>
+
         ${this.name
-          ? html`
-              <text
-                x="60"
-                y="76"
-                text-anchor="middle"
-                fill="${labelColor}"
-                class="name-text"
-              >
-                ${this.name}
-              </text>
-            `
+          ? html`<div class="gauge-name" style="color: ${subColor}">${this.name}</div>`
           : nothing}
-      </svg>
+      </div>
     `;
   }
 
@@ -199,6 +178,19 @@ export class AqmGauge extends LitElement {
       width: 100%;
     }
 
+    .gauge-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+
+    .gauge-icon {
+      --mdc-icon-size: 20px;
+      color: var(--secondary-text-color);
+      margin-bottom: 2px;
+    }
+
     .gauge-svg {
       width: 100%;
       height: auto;
@@ -206,22 +198,15 @@ export class AqmGauge extends LitElement {
       overflow: visible;
     }
 
-    /* Arc transitions */
-    .arc-bg {
+    .arc-fill {
       transition: stroke 0.3s ease;
     }
 
-    .arc-fill {
-      transition: stroke 0.3s ease, stroke-width 0.3s ease;
-    }
-
-    /* Text styles */
     .value-text {
       font-size: 18px;
-      font-weight: 700;
+      font-weight: 600;
       font-family: var(--paper-font-common-base_-_font-family, 'Roboto', 'Noto Sans', sans-serif);
       dominant-baseline: central;
-      transition: fill 0.3s ease;
     }
 
     .unit-text {
@@ -229,27 +214,30 @@ export class AqmGauge extends LitElement {
       font-weight: 400;
       font-family: var(--paper-font-common-base_-_font-family, 'Roboto', 'Noto Sans', sans-serif);
       dominant-baseline: central;
-      transition: fill 0.3s ease;
-    }
-
-    .name-text {
-      font-size: 9px;
-      font-weight: 500;
-      font-family: var(--paper-font-common-base_-_font-family, 'Roboto', 'Noto Sans', sans-serif);
-      dominant-baseline: central;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      transition: fill 0.3s ease;
     }
 
     .unavailable-text {
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 500;
       font-family: var(--paper-font-common-base_-_font-family, 'Roboto', 'Noto Sans', sans-serif);
       dominant-baseline: central;
     }
 
-    /* Compact mode overrides */
+    .gauge-name {
+      font-size: 11px;
+      font-weight: 500;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+      line-height: 1.2;
+    }
+
+    /* Compact mode */
+    :host([compact]) .gauge-icon {
+      display: none;
+    }
+
     :host([compact]) .value-text {
       font-size: 14px;
     }
@@ -258,8 +246,8 @@ export class AqmGauge extends LitElement {
       font-size: 9px;
     }
 
-    :host([compact]) .name-text {
-      font-size: 8px;
+    :host([compact]) .gauge-name {
+      font-size: 9px;
     }
   `;
 }
