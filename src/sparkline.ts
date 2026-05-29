@@ -65,11 +65,11 @@ export class AqmSparkline extends LitElement {
     const ts = this.effectiveTimeStart;
     const te = this.effectiveTimeEnd;
     if (this.step) {
-      return generateStepSparklinePath(data, this.width, this.height, 2, ts, te);
+      return generateStepSparklinePath(data, this.width, this.height, 2, ts, te, this.min, this.max);
     }
     return this.smooth
-      ? generateSmoothSparklinePath(data, this.width, this.height, 2, 0.3, ts, te)
-      : generateSparklinePath(data, this.width, this.height, 2, ts, te);
+      ? generateSmoothSparklinePath(data, this.width, this.height, 2, 0.3, ts, te, this.min, this.max)
+      : generateSparklinePath(data, this.width, this.height, 2, ts, te, this.min, this.max);
   }
 
   private get areaPath(): string {
@@ -77,11 +77,11 @@ export class AqmSparkline extends LitElement {
     const ts = this.effectiveTimeStart;
     const te = this.effectiveTimeEnd;
     if (this.step) {
-      return generateStepSparklineAreaPath(data, this.width, this.height, 2, ts, te);
+      return generateStepSparklineAreaPath(data, this.width, this.height, 2, ts, te, this.min, this.max);
     }
     return this.smooth
-      ? generateSmoothSparklineAreaPath(data, this.width, this.height, 2, 0.3, ts, te)
-      : generateSparklineAreaPath(data, this.width, this.height, 2, ts, te);
+      ? generateSmoothSparklineAreaPath(data, this.width, this.height, 2, 0.3, ts, te, this.min, this.max)
+      : generateSparklineAreaPath(data, this.width, this.height, 2, ts, te, this.min, this.max);
   }
 
   private get hasData(): boolean {

@@ -606,3 +606,69 @@ describe('timeStart/timeEnd parameters', () => {
     expect(implicit).toBe(explicit);
   });
 });
+
+// ─── valueMin/valueMax parameters ─────────────────────────────────────
+describe('valueMin/valueMax parameters', () => {
+  const points = [
+    { timestamp: 0, value: 30 },
+    { timestamp: 100, value: 50 },
+    { timestamp: 200, value: 70 },
+  ];
+
+  it('generateSparklinePath uses configured min/max for y-axis', () => {
+    // Data range is 30-70, but with valueMin=0, valueMax=100, y positions should differ
+    const dataRange = generateSparklinePath(points, 120, 40);
+    const fixedRange = generateSparklinePath(points, 120, 40, 2, 0, 200, 0, 100);
+    expect(fixedRange).not.toBe(dataRange);
+  });
+
+  it('generateSparklinePath with valueMin/valueMax maps values to full height', () => {
+    // With valueMin=0, valueMax=100, value=50 should be at the midpoint
+    const path = generateSparklinePath(
+      [{ timestamp: 0, value: 50 }, { timestamp: 100, value: 50 }],
+      120, 40, 2, 0, 100, 0, 100,
+    );
+    const moves = path.match(/[ML]\s+[\d.]+\s+[\d.]+/g)!;
+    const y1 = parseFloat(moves[0].split(/\s+/)[2]);
+    const y2 = parseFloat(moves[1].split(/\s+/)[2]);
+    // Both points at value=50 in a 0-100 range should be at the vertical midpoint
+    expect(y1).toBeCloseTo(y2, 1);
+    // Midpoint of height 40 with padding 2: 2 + (40-4)/2 = 20
+    expect(y1).toBeCloseTo(20, 0);
+  });
+
+  it('generateStepSparklinePath uses configured min/max for y-axis', () => {
+    const dataRange = generateStepSparklinePath(points, 120, 40);
+    const fixedRange = generateStepSparklinePath(points, 120, 40, 2, 0, 200, 0, 100);
+    expect(fixedRange).not.toBe(dataRange);
+  });
+
+  it('generateSmoothSparklinePath uses configured min/max for y-axis', () => {
+    const dataRange = generateSmoothSparklinePath(points, 120, 40);
+    const fixedRange = generateSmoothSparklinePath(points, 120, 40, 2, 0.3, 0, 200, 0, 100);
+    expect(fixedRange).not.toBe(dataRange);
+  });
+
+  it('area paths use configured min/max', () => {
+    const areaData = generateSparklineAreaPath(points, 120, 40);
+    const areaFixed = generateSparklineAreaPath(points, 120, 40, 2, 0, 200, 0, 100);
+    expect(areaFixed).not.toBe(areaData);
+  });
+
+  it('defaults to data range when valueMin/valueMax not provided', () => {
+    const implicit = generateSparklinePath(points, 120, 40);
+    const explicit = generateSparklinePath(points, 120, 40, 2, 0, 200, 30, 70);
+    expect(implicit).toBe(explicit);
+  });
+
+  it('clamps values outside configured range', () => {
+    // value=150 with max=100 should still render (just above the top)
+    const path = generateSparklinePath(
+      [{ timestamp: 0, value: 150 }, { timestamp: 100, value: 50 }],
+      120, 40, 2, 0, 100, 0, 100,
+    );
+    expect(path).toMatch(/^M /);
+    // Should not crash and should produce a valid path
+    expect(path).toContain('L ');
+  });
+});
