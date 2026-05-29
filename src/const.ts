@@ -11,41 +11,49 @@ export const DEFAULT_COMPACT = false;
 
 /** Default severity thresholds for common air quality metrics */
 export const DEFAULT_SEVERITIES: Record<string, { min: number; max: number; severity: Record<string, number> }> = {
+  // EPA AQI 2024 breakpoints (24-hour, µg/m³)
   pm25: {
     min: 0,
     max: 150,
-    severity: { good: 12, moderate: 35, unhealthy_sensitive: 55, unhealthy: 150 },
+    severity: { good: 9, moderate: 35.4, unhealthy_sensitive: 55.4, unhealthy: 150 },
   },
+  // EPA AQI breakpoints (24-hour, µg/m³)
   pm10: {
     min: 0,
     max: 300,
     severity: { good: 54, moderate: 154, unhealthy_sensitive: 254, unhealthy: 300 },
   },
+  // No official EPA/WHO PM1 standard; thresholds scaled from PM2.5
   pm1: {
     min: 0,
     max: 75,
     severity: { good: 8, moderate: 20, unhealthy_sensitive: 35, unhealthy: 75 },
   },
+  // Indoor air quality (ppm) — ASHRAE 62.1 / WELL
   co2: {
     min: 400,
     max: 5000,
     severity: { good: 800, moderate: 1500, unhealthy_sensitive: 2000, unhealthy: 5000 },
   },
+  // TVOC (µg/m³) — WELL / LEED indoor air quality
   voc: {
     min: 0,
-    max: 1000,
-    severity: { good: 250, moderate: 500, unhealthy_sensitive: 750, unhealthy: 1000 },
+    max: 2000,
+    severity: { good: 500, moderate: 1000, unhealthy_sensitive: 1500, unhealthy: 2000 },
   },
+  // Formaldehyde (µg/m³) — WHO indoor air quality guideline 0.1 mg/m³ = 100 µg/m³ (30-min)
   hcho: {
     min: 0,
     max: 500,
     severity: { good: 50, moderate: 100, unhealthy_sensitive: 200, unhealthy: 500 },
   },
+  // Temperature (°C) — comfort range
   temperature: {
     min: 0,
     max: 50,
     severity: { good: 26, moderate: 30, unhealthy_sensitive: 35, unhealthy: 50 },
   },
+  // Relative humidity (%)
   humidity: {
     min: 0,
     max: 100,
