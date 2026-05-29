@@ -174,6 +174,75 @@ export function generateSparklineAreaPath(
   return `${linePath} L ${lastX.toFixed(1)} ${height - padding} L ${padding} ${height - padding} Z`;
 }
 
+/** Generate smooth SVG sparkline path using Catmull-Rom → cubic Bézier */
+export function generateSmoothSparklinePath(
+  points: HistoryPoint[],
+  width: number,
+  height: number,
+  padding: number = 2,
+  tension: number = 0.3,
+): string {
+  if (points.length < 2) return '';
+  if (points.length === 2) return generateSparklinePath(points, width, height, padding);
+
+  const values = points.map(p => p.value);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+
+  const effectiveWidth = width - padding * 2;
+  const effectiveHeight = height - padding * 2;
+  const stepX = effectiveWidth / (points.length - 1);
+
+  // Convert data points to SVG coordinates
+  const coords = points.map((point, i) => ({
+    x: padding + i * stepX,
+    y: padding + effectiveHeight - ((point.value - min) / range) * effectiveHeight,
+  }));
+
+  // Build path using Catmull-Rom → cubic Bézier conversion
+  // tension controls how tight the curve is (0 = no smoothing, 1 = very loose)
+  // We use tension * (1/6) as the control point offset factor for slight smoothing
+  const segments: string[] = [`M ${coords[0].x.toFixed(1)} ${coords[0].y.toFixed(1)}`];
+
+  for (let i = 0; i < coords.length - 1; i++) {
+    const p0 = coords[Math.max(0, i - 1)];
+    const p1 = coords[i];
+    const p2 = coords[i + 1];
+    const p3 = coords[Math.min(coords.length - 1, i + 2)];
+
+    // Catmull-Rom control points scaled by tension
+    const cp1x = p1.x + (p2.x - p0.x) * tension / 3;
+    const cp1y = p1.y + (p2.y - p0.y) * tension / 3;
+    const cp2x = p2.x - (p3.x - p1.x) * tension / 3;
+    const cp2y = p2.y - (p3.y - p1.y) * tension / 3;
+
+    segments.push(
+      `C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)} ${cp2x.toFixed(1)} ${cp2y.toFixed(1)} ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`
+    );
+  }
+
+  return segments.join(' ');
+}
+
+/** Generate smooth filled area path for sparkline */
+export function generateSmoothSparklineAreaPath(
+  points: HistoryPoint[],
+  width: number,
+  height: number,
+  padding: number = 2,
+  tension: number = 0.3,
+): string {
+  if (points.length < 2) return '';
+
+  const linePath = generateSmoothSparklinePath(points, width, height, padding, tension);
+  const effectiveWidth = width - padding * 2;
+  const stepX = effectiveWidth / (points.length - 1);
+  const lastX = padding + (points.length - 1) * stepX;
+
+  return `${linePath} L ${lastX.toFixed(1)} ${height - padding} L ${padding} ${height - padding} Z`;
+}
+
 /** Debounce function */
 export function debounce<T extends (...args: any[]) => void>(fn: T, delay: number): T {
   let timer: ReturnType<typeof setTimeout>;

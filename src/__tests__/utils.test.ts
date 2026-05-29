@@ -6,6 +6,8 @@ import {
   clamp,
   generateSparklinePath,
   generateSparklineAreaPath,
+  generateSmoothSparklinePath,
+  generateSmoothSparklineAreaPath,
   detectTrend,
 } from '../utils';
 import {
@@ -322,5 +324,72 @@ describe('detectTrend', () => {
   it('includes arrow in result', () => {
     expect(detectTrend([]).arrow).toBe('→');
     expect(detectTrend([{ timestamp: 1, value: 10 }]).arrow).toBe('→');
+  });
+});
+
+// ─── generateSmoothSparklinePath ─────────────────────────────────────
+describe('generateSmoothSparklinePath', () => {
+  it('returns empty string for fewer than 2 points', () => {
+    expect(generateSmoothSparklinePath([], 120, 40)).toBe('');
+    expect(generateSmoothSparklinePath([{ timestamp: 1, value: 5 }], 120, 40)).toBe('');
+  });
+
+  it('falls back to linear path for 2 points', () => {
+    const points = [
+      { timestamp: 1, value: 10 },
+      { timestamp: 2, value: 20 },
+    ];
+    const smooth = generateSmoothSparklinePath(points, 120, 40);
+    const linear = generateSparklinePath(points, 120, 40);
+    expect(smooth).toBe(linear);
+  });
+
+  it('starts with M command', () => {
+    const points = [
+      { timestamp: 1, value: 10 },
+      { timestamp: 2, value: 20 },
+      { timestamp: 3, value: 15 },
+    ];
+    const path = generateSmoothSparklinePath(points, 120, 40);
+    expect(path).toMatch(/^M /);
+  });
+
+  it('uses C commands for 3+ points', () => {
+    const points = [
+      { timestamp: 1, value: 10 },
+      { timestamp: 2, value: 20 },
+      { timestamp: 3, value: 15 },
+    ];
+    const path = generateSmoothSparklinePath(points, 120, 40);
+    expect(path).toContain('C ');
+  });
+
+  it('produces different output than linear for 3+ points', () => {
+    const points = [
+      { timestamp: 1, value: 10 },
+      { timestamp: 2, value: 30 },
+      { timestamp: 3, value: 15 },
+      { timestamp: 4, value: 25 },
+    ];
+    const smooth = generateSmoothSparklinePath(points, 120, 40);
+    const linear = generateSparklinePath(points, 120, 40);
+    expect(smooth).not.toBe(linear);
+  });
+});
+
+// ─── generateSmoothSparklineAreaPath ──────────────────────────────────
+describe('generateSmoothSparklineAreaPath', () => {
+  it('returns empty string for fewer than 2 points', () => {
+    expect(generateSmoothSparklineAreaPath([], 120, 40)).toBe('');
+  });
+
+  it('ends with Z (closed path)', () => {
+    const points = [
+      { timestamp: 1, value: 10 },
+      { timestamp: 2, value: 20 },
+      { timestamp: 3, value: 15 },
+    ];
+    const path = generateSmoothSparklineAreaPath(points, 120, 40);
+    expect(path).toMatch(/Z$/);
   });
 });

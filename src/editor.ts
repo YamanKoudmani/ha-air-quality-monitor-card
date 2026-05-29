@@ -8,6 +8,7 @@ import {
   DEFAULT_SHOW_SPARKLINES,
   DEFAULT_SPARKLINE_HOURS,
   DEFAULT_COMPACT,
+  DEFAULT_SMOOTH_SPARKLINES,
 } from './const';
 
 @customElement('air-quality-monitor-card-editor')
@@ -158,6 +159,16 @@ export class AirQualityMonitorCardEditor extends LitElement {
                 </div>
               `
             : nothing}
+
+          <label class="toggle">
+            <input
+              type="checkbox"
+              .checked=${config.smooth_sparklines ?? DEFAULT_SMOOTH_SPARKLINES}
+              data-config-value="smooth_sparklines"
+              @change=${this._valueChanged}
+            />
+            <span>Smooth sparklines</span>
+          </label>
         </div>
 
         <!-- Entities -->

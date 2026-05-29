@@ -10,6 +10,7 @@ import {
   DEFAULT_SHOW_SPARKLINES,
   DEFAULT_SPARKLINE_HOURS,
   DEFAULT_COMPACT,
+  DEFAULT_SMOOTH_SPARKLINES,
 } from './const';
 import { resolveMetricData, fetchHistory, detectTrend } from './utils';
 import './editor';
@@ -40,6 +41,7 @@ export class AirQualityMonitorCard extends LitElement {
       show_sparklines: DEFAULT_SHOW_SPARKLINES,
       sparkline_hours: DEFAULT_SPARKLINE_HOURS,
       compact: DEFAULT_COMPACT,
+      smooth_sparklines: DEFAULT_SMOOTH_SPARKLINES,
     };
   }
 
@@ -63,6 +65,7 @@ export class AirQualityMonitorCard extends LitElement {
       show_sparklines: config.show_sparklines ?? DEFAULT_SHOW_SPARKLINES,
       sparkline_hours: config.sparkline_hours ?? DEFAULT_SPARKLINE_HOURS,
       compact: config.compact ?? DEFAULT_COMPACT,
+      smooth_sparklines: config.smooth_sparklines ?? DEFAULT_SMOOTH_SPARKLINES,
     };
   }
 
@@ -182,6 +185,7 @@ export class AirQualityMonitorCard extends LitElement {
                           .severity=${data.config.severity as Record<string, number> | undefined}
                           .min=${data.config.min ?? 0}
                           .max=${data.config.max ?? 100}
+                          .smooth=${config.smooth_sparklines !== false}
                         ></aqm-sparkline>
                       `
                     : nothing}

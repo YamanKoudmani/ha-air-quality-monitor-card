@@ -1,6 +1,6 @@
 import type { SeverityInfo, SeverityLevel } from './types';
 
-export const CARD_VERSION = '2.0.1';
+export const CARD_VERSION = '2.1.0';
 export const CARD_TAG = 'air-quality-monitor-card';
 export const EDITOR_TAG = 'air-quality-monitor-card-editor';
 
@@ -8,6 +8,7 @@ export const DEFAULT_COLUMNS = 2;
 export const DEFAULT_SPARKLINE_HOURS = 24;
 export const DEFAULT_SHOW_SPARKLINES = true;
 export const DEFAULT_COMPACT = false;
+export const DEFAULT_SMOOTH_SPARKLINES = false;
 
 /** Default severity thresholds for common air quality metrics */
 export const DEFAULT_SEVERITIES: Record<string, { min: number; max: number; severity: Record<string, number> }> = {
