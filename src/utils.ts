@@ -183,32 +183,39 @@ export function debounce<T extends (...args: any[]) => void>(fn: T, delay: numbe
   }) as T;
 }
 
-/** Detect trend direction from history data */
+/** Detect trend direction from history data using linear regression slope */
 export function detectTrend(history: HistoryPoint[]): TrendInfo {
   if (!history || history.length < 2) {
     return { direction: 'stable', label: 'stable', arrow: '→' };
   }
 
-  // Compare recent values (last 25%) to earlier values (first 25%)
-  const recentStart = Math.floor(history.length * 0.75);
-  const earlyEnd = Math.floor(history.length * 0.25);
+  const n = history.length;
 
-  const recentSlice = history.slice(recentStart);
-  const earlySlice = history.slice(0, Math.max(earlyEnd, 1));
+  // Linear regression: y = slope * x + intercept
+  // x = index (0..n-1), y = value
+  // Uses all data points for a robust trend estimate
+  let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+  for (let i = 0; i < n; i++) {
+    const x = i;
+    const y = history[i].value;
+    sumX += x;
+    sumY += y;
+    sumXY += x * y;
+    sumX2 += x * x;
+  }
 
-  const recentAvg = recentSlice.reduce((s, p) => s + p.value, 0) / recentSlice.length;
-  const earlyAvg = earlySlice.reduce((s, p) => s + p.value, 0) / earlySlice.length;
+  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
 
-  // Threshold: 5% of the range or at least 1 unit
+  // Threshold: slope * n gives the total change across the dataset.
+  // Compare that total change against 5% of the value range (min 1 unit).
   const allValues = history.map(p => p.value);
   const range = Math.max(...allValues) - Math.min(...allValues);
+  const totalChange = slope * (n - 1);
   const threshold = Math.max(range * 0.05, 1);
 
-  const diff = recentAvg - earlyAvg;
-
-  if (diff > threshold) {
+  if (totalChange > threshold) {
     return { direction: 'rising', label: 'rising', arrow: '↑' };
-  } else if (diff < -threshold) {
+  } else if (totalChange < -threshold) {
     return { direction: 'falling', label: 'falling', arrow: '↓' };
   } else {
     return { direction: 'stable', label: 'stable', arrow: '→' };
