@@ -501,3 +501,108 @@ describe('generateStepSparklineAreaPath', () => {
     expect(path).toMatch(/Z$/);
   });
 });
+
+// ─── timeStart/timeEnd parameters ─────────────────────────────────────
+describe('timeStart/timeEnd parameters', () => {
+  // Data points clustered in the last 1/3 of a 360-unit time window
+  const recentPoints = [
+    { timestamp: 240, value: 10 },
+    { timestamp: 300, value: 20 },
+    { timestamp: 360, value: 15 },
+  ];
+
+  it('generateSparklinePath uses full time window when timeStart/timeEnd provided', () => {
+    // Without timeStart/timeEnd, points span t=240..360 (narrow range)
+    const narrowPath = generateSparklinePath(recentPoints, 120, 40);
+    // With timeStart=0, timeEnd=360 (full window), points should spread across full width
+    const fullPath = generateSparklinePath(recentPoints, 120, 40, 2, 0, 360);
+
+    // In the narrow path, first point is at x≈2 (left edge of narrow range)
+    // In the full path, first point should be at ~67% across (240/360 * effectiveWidth + padding)
+    const narrowMoves = narrowPath.match(/[ML]\s+[\d.]+\s+[\d.]+/g)!;
+    const fullMoves = fullPath.match(/[ML]\s+[\d.]+\s+[\d.]+/g)!;
+
+    const narrowFirstX = parseFloat(narrowMoves[0].split(/\s+/)[1]);
+    const fullFirstX = parseFloat(fullMoves[0].split(/\s+/)[1]);
+
+    // With full window, first point should be much further right than with narrow range
+    expect(fullFirstX).toBeGreaterThan(narrowFirstX + 10);
+  });
+
+  it('generateStepSparklinePath uses full time window when timeStart/timeEnd provided', () => {
+    const narrowPath = generateStepSparklinePath(recentPoints, 120, 40);
+    const fullPath = generateStepSparklinePath(recentPoints, 120, 40, 2, 0, 360);
+
+    const narrowMoves = narrowPath.match(/[ML]\s+[\d.]+\s+[\d.]+/g)!;
+    const fullMoves = fullPath.match(/[ML]\s+[\d.]+\s+[\d.]+/g)!;
+
+    const narrowFirstX = parseFloat(narrowMoves[0].split(/\s+/)[1]);
+    const fullFirstX = parseFloat(fullMoves[0].split(/\s+/)[1]);
+
+    expect(fullFirstX).toBeGreaterThan(narrowFirstX + 10);
+  });
+
+  it('generateSmoothSparklinePath uses full time window when timeStart/timeEnd provided', () => {
+    const points = [
+      { timestamp: 240, value: 10 },
+      { timestamp: 300, value: 20 },
+      { timestamp: 360, value: 15 },
+      { timestamp: 400, value: 25 },
+    ];
+    const narrowPath = generateSmoothSparklinePath(points, 120, 40);
+    const fullPath = generateSmoothSparklinePath(points, 120, 40, 2, 0.3, 0, 400);
+
+    const narrowMoves = narrowPath.match(/[ML]\s+[\d.]+\s+[\d.]+/g)!;
+    const fullMoves = fullPath.match(/[ML]\s+[\d.]+\s+[\d.]+/g)!;
+
+    const narrowFirstX = parseFloat(narrowMoves[0].split(/\s+/)[1]);
+    const fullFirstX = parseFloat(fullMoves[0].split(/\s+/)[1]);
+
+    expect(fullFirstX).toBeGreaterThan(narrowFirstX + 10);
+  });
+
+  it('area paths use full time window for closing coordinates', () => {
+    const points = [
+      { timestamp: 240, value: 10 },
+      { timestamp: 360, value: 20 },
+    ];
+    // Without timeStart/timeEnd, last X is at right edge (padding + effectiveWidth)
+    const narrowArea = generateSparklineAreaPath(points, 120, 40);
+    // With full window, last X should still be at right edge
+    const fullArea = generateSparklineAreaPath(points, 120, 40, 2, 0, 360);
+
+    // Both should end with Z and have closing coordinates at the right edge
+    expect(narrowArea).toMatch(/Z$/);
+    expect(fullArea).toMatch(/Z$/);
+  });
+
+  it('step area path uses full time window', () => {
+    const points = [
+      { timestamp: 240, value: 10 },
+      { timestamp: 360, value: 20 },
+    ];
+    const fullArea = generateStepSparklineAreaPath(points, 120, 40, 2, 0, 360);
+    expect(fullArea).toMatch(/Z$/);
+  });
+
+  it('smooth area path uses full time window', () => {
+    const points = [
+      { timestamp: 240, value: 10 },
+      { timestamp: 300, value: 20 },
+      { timestamp: 360, value: 15 },
+    ];
+    const fullArea = generateSmoothSparklineAreaPath(points, 120, 40, 2, 0.3, 0, 360);
+    expect(fullArea).toMatch(/Z$/);
+  });
+
+  it('defaults to data range when timeStart/timeEnd not provided', () => {
+    const points = [
+      { timestamp: 100, value: 10 },
+      { timestamp: 200, value: 20 },
+    ];
+    // Should produce same result whether or not timeStart/timeEnd match data range
+    const implicit = generateSparklinePath(points, 120, 40);
+    const explicit = generateSparklinePath(points, 120, 40, 2, 100, 200);
+    expect(implicit).toBe(explicit);
+  });
+});

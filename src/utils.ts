@@ -147,6 +147,8 @@ export function generateSparklinePath(
   width: number,
   height: number,
   padding: number = 2,
+  timeStart?: number,
+  timeEnd?: number,
 ): string {
   if (points.length < 2) return '';
 
@@ -158,8 +160,8 @@ export function generateSparklinePath(
   const effectiveWidth = width - padding * 2;
   const effectiveHeight = height - padding * 2;
 
-  const minTime = points[0].timestamp;
-  const maxTime = points[points.length - 1].timestamp;
+  const minTime = timeStart ?? points[0].timestamp;
+  const maxTime = timeEnd ?? points[points.length - 1].timestamp;
 
   return points
     .map((point, i) => {
@@ -176,13 +178,15 @@ export function generateSparklineAreaPath(
   width: number,
   height: number,
   padding: number = 2,
+  timeStart?: number,
+  timeEnd?: number,
 ): string {
   if (points.length < 2) return '';
 
-  const linePath = generateSparklinePath(points, width, height, padding);
+  const linePath = generateSparklinePath(points, width, height, padding, timeStart, timeEnd);
   const effectiveWidth = width - padding * 2;
-  const minTime = points[0].timestamp;
-  const maxTime = points[points.length - 1].timestamp;
+  const minTime = timeStart ?? points[0].timestamp;
+  const maxTime = timeEnd ?? points[points.length - 1].timestamp;
   const lastX = timestampToX(maxTime, minTime, maxTime, effectiveWidth, padding);
 
   return `${linePath} L ${lastX.toFixed(1)} ${height - padding} L ${padding} ${height - padding} Z`;
@@ -195,9 +199,11 @@ export function generateSmoothSparklinePath(
   height: number,
   padding: number = 2,
   tension: number = 0.3,
+  timeStart?: number,
+  timeEnd?: number,
 ): string {
   if (points.length < 2) return '';
-  if (points.length === 2) return generateSparklinePath(points, width, height, padding);
+  if (points.length === 2) return generateSparklinePath(points, width, height, padding, timeStart, timeEnd);
 
   const values = points.map(p => p.value);
   const min = Math.min(...values);
@@ -207,8 +213,8 @@ export function generateSmoothSparklinePath(
   const effectiveWidth = width - padding * 2;
   const effectiveHeight = height - padding * 2;
 
-  const minTime = points[0].timestamp;
-  const maxTime = points[points.length - 1].timestamp;
+  const minTime = timeStart ?? points[0].timestamp;
+  const maxTime = timeEnd ?? points[points.length - 1].timestamp;
 
   // Convert data points to SVG coordinates (time-proportional x)
   const coords = points.map((point) => ({
@@ -247,13 +253,15 @@ export function generateSmoothSparklineAreaPath(
   height: number,
   padding: number = 2,
   tension: number = 0.3,
+  timeStart?: number,
+  timeEnd?: number,
 ): string {
   if (points.length < 2) return '';
 
-  const linePath = generateSmoothSparklinePath(points, width, height, padding, tension);
+  const linePath = generateSmoothSparklinePath(points, width, height, padding, tension, timeStart, timeEnd);
   const effectiveWidth = width - padding * 2;
-  const minTime = points[0].timestamp;
-  const maxTime = points[points.length - 1].timestamp;
+  const minTime = timeStart ?? points[0].timestamp;
+  const maxTime = timeEnd ?? points[points.length - 1].timestamp;
   const lastX = timestampToX(maxTime, minTime, maxTime, effectiveWidth, padding);
 
   return `${linePath} L ${lastX.toFixed(1)} ${height - padding} L ${padding} ${height - padding} Z`;
@@ -267,6 +275,8 @@ export function generateStepSparklinePath(
   width: number,
   height: number,
   padding: number = 2,
+  timeStart?: number,
+  timeEnd?: number,
 ): string {
   if (points.length < 2) return '';
 
@@ -278,8 +288,8 @@ export function generateStepSparklinePath(
   const effectiveWidth = width - padding * 2;
   const effectiveHeight = height - padding * 2;
 
-  const minTime = points[0].timestamp;
-  const maxTime = points[points.length - 1].timestamp;
+  const minTime = timeStart ?? points[0].timestamp;
+  const maxTime = timeEnd ?? points[points.length - 1].timestamp;
 
   const segments: string[] = [];
 
@@ -306,13 +316,15 @@ export function generateStepSparklineAreaPath(
   width: number,
   height: number,
   padding: number = 2,
+  timeStart?: number,
+  timeEnd?: number,
 ): string {
   if (points.length < 2) return '';
 
-  const linePath = generateStepSparklinePath(points, width, height, padding);
+  const linePath = generateStepSparklinePath(points, width, height, padding, timeStart, timeEnd);
   const effectiveWidth = width - padding * 2;
-  const minTime = points[0].timestamp;
-  const maxTime = points[points.length - 1].timestamp;
+  const minTime = timeStart ?? points[0].timestamp;
+  const maxTime = timeEnd ?? points[points.length - 1].timestamp;
   const lastX = timestampToX(maxTime, minTime, maxTime, effectiveWidth, padding);
 
   return `${linePath} L ${lastX.toFixed(1)} ${height - padding} L ${padding} ${height - padding} Z`;

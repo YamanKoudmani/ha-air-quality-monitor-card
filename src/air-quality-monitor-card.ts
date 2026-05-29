@@ -180,9 +180,9 @@ export class AirQualityMonitorCard extends LitElement {
                     .trend=${trend}
                   ></aqm-gauge>
 
-                  ${this._shouldShowSparkline(data, config)
+${this._shouldShowSparkline(data, config)
                     ? html`
-<aqm-sparkline
+                        <aqm-sparkline
                            .data=${data.history}
                            .color=${data.severity.color}
                            .severity=${data.config.severity as Record<string, number> | undefined}
@@ -190,6 +190,8 @@ export class AirQualityMonitorCard extends LitElement {
                            .max=${data.config.max ?? 100}
                            .smooth=${config.smooth_sparklines === true}
                            .step=${config.step_sparklines !== false}
+                           .timeStart=${Date.now() - (config.sparkline_hours ?? DEFAULT_SPARKLINE_HOURS) * 3600000}
+                           .timeEnd=${Date.now()}
                          ></aqm-sparkline>
                       `
                     : nothing}

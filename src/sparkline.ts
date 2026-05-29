@@ -32,26 +32,56 @@ export class AqmSparkline extends LitElement {
   @property({ type: Number }) height = 40;
   @property({ type: Boolean }) smooth = false;
   @property({ type: Boolean }) step = true;
+  @property({ type: Number }) timeStart: number | undefined = undefined;
+  @property({ type: Number }) timeEnd: number | undefined = undefined;
 
   private areaGradientId = `spark-area-${++instanceCounter}`;
   private lineGradientId = `spark-line-${instanceCounter}`;
 
+  /** Get the effective time range for the x-axis */
+  private get effectiveTimeStart(): number {
+    if (this.timeStart !== undefined) return this.timeStart;
+    return this.data.length > 0 ? this.data[0].timestamp : 0;
+  }
+
+  private get effectiveTimeEnd(): number {
+    if (this.timeEnd !== undefined) return this.timeEnd;
+    return this.data.length > 0 ? this.data[this.data.length - 1].timestamp : 0;
+  }
+
+  /** Get data points with optional synthetic start point for step interpolation */
+  private get effectiveData(): HistoryPoint[] {
+    if (!this.data || this.data.length === 0) return [];
+    if (!this.step || this.timeStart === undefined) return this.data;
+    // For step mode with a time window, extend the first value backward to the start
+    if (this.data[0].timestamp > this.timeStart) {
+      return [{ timestamp: this.timeStart, value: this.data[0].value }, ...this.data];
+    }
+    return this.data;
+  }
+
   private get linePath(): string {
+    const data = this.effectiveData;
+    const ts = this.effectiveTimeStart;
+    const te = this.effectiveTimeEnd;
     if (this.step) {
-      return generateStepSparklinePath(this.data, this.width, this.height);
+      return generateStepSparklinePath(data, this.width, this.height, 2, ts, te);
     }
     return this.smooth
-      ? generateSmoothSparklinePath(this.data, this.width, this.height)
-      : generateSparklinePath(this.data, this.width, this.height);
+      ? generateSmoothSparklinePath(data, this.width, this.height, 2, 0.3, ts, te)
+      : generateSparklinePath(data, this.width, this.height, 2, ts, te);
   }
 
   private get areaPath(): string {
+    const data = this.effectiveData;
+    const ts = this.effectiveTimeStart;
+    const te = this.effectiveTimeEnd;
     if (this.step) {
-      return generateStepSparklineAreaPath(this.data, this.width, this.height);
+      return generateStepSparklineAreaPath(data, this.width, this.height, 2, ts, te);
     }
     return this.smooth
-      ? generateSmoothSparklineAreaPath(this.data, this.width, this.height)
-      : generateSparklineAreaPath(this.data, this.width, this.height);
+      ? generateSmoothSparklineAreaPath(data, this.width, this.height, 2, 0.3, ts, te)
+      : generateSparklineAreaPath(data, this.width, this.height, 2, ts, te);
   }
 
   private get hasData(): boolean {
@@ -65,13 +95,16 @@ export class AqmSparkline extends LitElement {
   /** Build the SVG stops markup for the line gradient */
   private get lineGradientStopsHTML(): string {
     if (!this.hasData || !this.severity) return '';
-    const points = this.data;
+    const points = this.effectiveData;
+    const ts = this.effectiveTimeStart;
+    const te = this.effectiveTimeEnd;
+    const timeRange = te - ts || 1;
     const step = Math.max(1, Math.floor(points.length / 30));
     const stops: string[] = [];
     for (let i = 0; i < points.length; i += step) {
-      const pct = points.length > 1 ? (i / (points.length - 1)) * 100 : 0;
+      const pct = timeRange > 0 ? ((points[i].timestamp - ts) / timeRange) * 100 : (i / (points.length - 1)) * 100;
       const color = getSeverity(points[i].value, this.severity).color;
-      stops.push(`<stop offset="${pct.toFixed(1)}%" stop-color="${color}"/>`);
+      stops.push(`<stop offset="${Math.max(0, Math.min(100, pct)).toFixed(1)}%" stop-color="${color}"/>`);
     }
     // Always include last point
     const lastIdx = points.length - 1;
