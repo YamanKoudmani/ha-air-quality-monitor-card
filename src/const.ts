@@ -21,6 +21,11 @@ export const DEFAULT_SEVERITIES: Record<string, { min: number; max: number; seve
     max: 250,
     severity: { good: 54, moderate: 154, unhealthy_sensitive: 254, unhealthy: 250 },
   },
+  pm1: {
+    min: 0,
+    max: 75,
+    severity: { good: 12, moderate: 35, unhealthy_sensitive: 55, unhealthy: 75 },
+  },
   co2: {
     min: 400,
     max: 5000,
@@ -30,6 +35,11 @@ export const DEFAULT_SEVERITIES: Record<string, { min: number; max: number; seve
     min: 0,
     max: 1000,
     severity: { good: 250, moderate: 500, unhealthy_sensitive: 750, unhealthy: 1000 },
+  },
+  hcho: {
+    min: 0,
+    max: 1,
+    severity: { good: 0.03, moderate: 0.08, unhealthy_sensitive: 0.15, unhealthy: 1 },
   },
   temperature: {
     min: 0,
@@ -79,8 +89,10 @@ export const SEVERITY_ORDER: SeverityLevel[] = [
 export const DEFAULT_ICONS: Record<string, string> = {
   pm25: 'mdi:air-filter',
   pm10: 'mdi:air-filter',
+  pm1: 'mdi:air-filter',
   co2: 'mdi:molecule-co2',
   voc: 'mdi:flask-outline',
+  hcho: 'mdi:chemical-weapon',
   temperature: 'mdi:thermometer',
   humidity: 'mdi:water-percent',
   aqi: 'mdi:weather-hazy',
@@ -119,14 +131,15 @@ export function guessMetricType(entityId: string): string {
   const lower = entityId.toLowerCase();
   if (lower.includes('pm25') || lower.includes('pm2.5') || lower.includes('pm2_5')) return 'pm25';
   if (lower.includes('pm10')) return 'pm10';
+  if (lower.includes('pm1') && !lower.includes('pm10') && !lower.includes('pm25') && !lower.includes('pm2')) return 'pm1';
   if (lower.includes('co2') || lower.includes('carbon_dioxide')) return 'co2';
   if (lower.includes('voc') || lower.includes('volatile')) return 'voc';
+  if (lower.includes('hcho') || lower.includes('formaldehyde')) return 'hcho';
   if (lower.includes('temp')) return 'temperature';
   if (lower.includes('humid')) return 'humidity';
   if (lower.includes('aqi') || lower.includes('air_quality')) return 'aqi';
   if (lower.includes('no2') || lower.includes('nitrogen')) return 'no2';
   if (lower.includes('o3') || lower.includes('ozone')) return 'o3';
-  if (lower.includes('formaldehyde')) return 'formaldehyde';
   if (lower.includes('co') && !lower.includes('co2')) return 'co';
   return '';
 }
