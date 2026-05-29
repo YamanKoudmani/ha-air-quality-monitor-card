@@ -1,6 +1,6 @@
 {
   "name": "air-quality-monitor-card",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "A custom Home Assistant Lovelace card for monitoring air quality with gauges and sparklines",
   "keywords": [
     "home-assistant",

@@ -1,6 +1,6 @@
 import type { SeverityInfo, SeverityLevel } from './types';
 
-export const CARD_VERSION = '2.1.0';
+export const CARD_VERSION = '2.2.0';
 export const CARD_TAG = 'air-quality-monitor-card';
 export const EDITOR_TAG = 'air-quality-monitor-card-editor';
 
