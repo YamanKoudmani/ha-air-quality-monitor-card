@@ -2,7 +2,7 @@
 import { customElement, property } from 'lit/decorators.js';
 import type { HistoryPoint } from './types';
 import { generateSparklinePath, generateSparklineAreaPath, generateSmoothSparklinePath, generateSmoothSparklineAreaPath } from './utils';
-import { getSeverity } from './const';
+import { getSeverity, SEVERITY_COLORS, SEVERITY_ORDER } from './const';
 
 let instanceCounter = 0;
 
@@ -73,6 +73,37 @@ export class AqmSparkline extends LitElement {
     return stops.join('');
   }
 
+  /** Build the SVG stops markup for the area gradient (severity-based vertical) */
+  private get areaGradientStopsHTML(): string {
+    if (this.severity) {
+      // Severity-based gradient: green at bottom (low values) → red at top (high values)
+      const stops: string[] = [];
+      const range = this.max - this.min || 1;
+
+      // Top of chart (offset 0%) = worst severity color
+      const worstLevel = SEVERITY_ORDER.find(l => this.severity![l] !== undefined);
+      if (worstLevel) {
+        stops.push(`<stop offset="0%" stop-color="${SEVERITY_COLORS[worstLevel]}" stop-opacity="0.35"/>`);
+      }
+
+      // Threshold stops (SEVERITY_ORDER is worst-to-best = decreasing threshold = increasing offset)
+      for (const level of SEVERITY_ORDER) {
+        const threshold = this.severity[level];
+        if (threshold === undefined) continue;
+        const offset = ((this.max - threshold) / range) * 100;
+        stops.push(`<stop offset="${Math.max(0, Math.min(100, offset)).toFixed(1)}%" stop-color="${SEVERITY_COLORS[level]}" stop-opacity="0.35"/>`);
+      }
+
+      // Bottom of chart (offset 100%) = good color
+      stops.push(`<stop offset="100%" stop-color="${SEVERITY_COLORS.good}" stop-opacity="0.15"/>`);
+
+      return stops.join('');
+    }
+
+    // Fallback: single-color fade
+    return `<stop offset="0%" stop-color="${this.color}" stop-opacity="0.4"/><stop offset="100%" stop-color="${this.color}" stop-opacity="0.05"/>`;
+  }
+
   render() {
     const lineStroke = this.useGradient ? `url(#${this.lineGradientId})` : this.color;
 
@@ -86,10 +117,9 @@ export class AqmSparkline extends LitElement {
         aria-label="Sparkline chart"
       >
         <defs>
-          <!-- Area fill gradient (vertical, single color fading down) -->
+          <!-- Area fill gradient (vertical, severity-based or single-color) -->
+          <!-- Stops are injected via innerHTML in updated() -->
           <linearGradient id="${this.areaGradientId}" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="${this.color}" stop-opacity="0.4" />
-            <stop offset="100%" stop-color="${this.color}" stop-opacity="0.05" />
           </linearGradient>
 
           <!-- Line stroke gradient (horizontal, per-point severity colors) -->
@@ -133,10 +163,18 @@ export class AqmSparkline extends LitElement {
   updated(): void {
     // Inject gradient stops via DOM after render to avoid Lit SVG namespace issues
     // with nested html`` templates inside <defs>
+
+    // Area gradient (always present — severity-based or single-color fallback)
+    const areaGradEl = this.shadowRoot?.getElementById(this.areaGradientId);
+    if (areaGradEl) {
+      areaGradEl.innerHTML = this.areaGradientStopsHTML;
+    }
+
+    // Line gradient (only when severity data is available)
     if (this.useGradient) {
-      const gradEl = this.shadowRoot?.getElementById(this.lineGradientId);
-      if (gradEl) {
-        gradEl.innerHTML = this.lineGradientStopsHTML;
+      const lineGradEl = this.shadowRoot?.getElementById(this.lineGradientId);
+      if (lineGradEl) {
+        lineGradEl.innerHTML = this.lineGradientStopsHTML;
       }
     }
   }
