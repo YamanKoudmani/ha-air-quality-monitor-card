@@ -22,6 +22,7 @@ export interface MetricEntityConfig {
   color?: string;
   precision?: number;
   show_sparkline?: boolean;
+  show_unit?: boolean;
 }
 
 /** Main card configuration */

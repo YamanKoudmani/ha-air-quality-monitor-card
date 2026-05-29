@@ -5,9 +5,8 @@ import { describeArc, formatValue } from './utils';
 /**
  * Circular arc gauge component (aqm-gauge)
  *
- * Displays a single metric value as a speedometer-style arc.
- * The arc opens at the bottom (120° gap) and sweeps 240° clockwise.
- * Supports severity coloring, unavailable state, and compact mode.
+ * Speedometer-style arc: 240° sweep with 120° gap at the bottom.
+ * Arc goes clockwise from lower-right (330°) through top to lower-left (210°).
  */
 @customElement('aqm-gauge')
 export class AqmGauge extends LitElement {
@@ -17,17 +16,20 @@ export class AqmGauge extends LitElement {
   @property({ type: String }) severityColor = '#9e9e9e';
   @property({ type: String }) name = '';
   @property({ type: String }) unit = '';
+  @property({ type: Boolean }) showUnit = true;
   @property({ type: String }) icon = '';
   @property({ type: Boolean, reflect: true }) unavailable = false;
   @property({ type: Boolean, reflect: true }) compact = false;
 
-  // Gauge geometry — 240° clockwise arc with 120° gap at the bottom
-  // Arc starts at 240° (lower-left, ~8 o'clock) and ends at 120° (lower-right, ~4 o'clock)
+  // Gauge geometry
+  // Angles use convention: 0°=top, 90°=right, 180°=bottom, 270°=left
+  // Arc sweeps clockwise from 330° (lower-right) to 210° (lower-left)
+  // That's 240° of arc with a 120° gap at the bottom
   private readonly cx = 60;
-  private readonly cy = 42;
-  private readonly radius = 30;
-  private readonly arcStart = 240;  // lower-left
-  private readonly arcEnd = 120;     // lower-right
+  private readonly cy = 40;
+  private readonly radius = 28;
+  private readonly arcStart = 330;   // lower-right (~4 o'clock)
+  private readonly arcEnd = 210;     // lower-left (~8 o'clock)
   private readonly totalSweep = 240; // degrees
   private readonly strokeWidth = 7;
 
@@ -56,8 +58,7 @@ export class AqmGauge extends LitElement {
   }
 
   render() {
-    const displayValue = this.unavailable ? '\u2014' : formatValue(this.value);
-    const displayUnit = this.unavailable ? '' : this.unit;
+    const displayValue = this.unavailable ? '—' : formatValue(this.value);
     const arcColor = this.unavailable ? '#bdbdbd' : this.severityColor;
     const textColor = this.unavailable
       ? 'var(--disabled-text-color, #9e9e9e)'
@@ -66,17 +67,18 @@ export class AqmGauge extends LitElement {
       ? 'var(--disabled-text-color, #9e9e9e)'
       : 'var(--secondary-text-color)';
 
+    // Show unit inline with value or below
+    const valueText = this.showUnit && this.unit
+      ? html`${displayValue}<tspan class="unit-inline"> ${this.unit}</tspan>`
+      : html`${displayValue}`;
+
     return html`
       <div class="gauge-container">
-        ${this.icon && !this.compact && !this.unavailable
-          ? html`<ha-icon .icon=${this.icon} class="gauge-icon"></ha-icon>`
-          : nothing}
-
         <svg
-          viewBox="0 0 120 75"
+          viewBox="0 0 120 72"
           class="gauge-svg"
           role="img"
-          aria-label="${this.name}: ${displayValue}${displayUnit ? ' ' + displayUnit : ''}"
+          aria-label="${this.name}: ${displayValue}${this.unit ? ' ' + this.unit : ''}"
         >
           <!-- Background arc -->
           <path
@@ -104,48 +106,34 @@ export class AqmGauge extends LitElement {
           <!-- Value text -->
           <text
             x="60"
-            y="${this.compact ? 44 : 46}"
+            y="${this.compact ? 40 : 42}"
             text-anchor="middle"
             fill="${textColor}"
             class="value-text"
-          >
-            ${displayValue}
-          </text>
-
-          <!-- Unit text -->
-          ${displayUnit
-            ? html`
-                <text
-                  x="60"
-                  y="${this.compact ? 54 : 56}"
-                  text-anchor="middle"
-                  fill="${subColor}"
-                  class="unit-text"
-                >
-                  ${displayUnit}
-                </text>
-              `
-            : nothing}
+          >${valueText}</text>
 
           <!-- Unavailable label -->
           ${this.unavailable
             ? html`
                 <text
                   x="60"
-                  y="46"
+                  y="42"
                   text-anchor="middle"
                   fill="var(--disabled-text-color, #9e9e9e)"
                   class="unavailable-text"
-                >
-                  N/A
-                </text>
+                >N/A</text>
               `
             : nothing}
         </svg>
 
-        ${this.name
-          ? html`<div class="gauge-name" style="color: ${subColor}">${this.name}</div>`
-          : nothing}
+        <div class="gauge-footer">
+          ${this.icon && !this.compact && !this.unavailable
+            ? html`<ha-icon .icon=${this.icon} class="gauge-icon"></ha-icon>`
+            : nothing}
+          ${this.name
+            ? html`<span class="gauge-name" style="color: ${subColor}">${this.name}</span>`
+            : nothing}
+        </div>
       </div>
     `;
   }
@@ -161,12 +149,6 @@ export class AqmGauge extends LitElement {
       flex-direction: column;
       align-items: center;
       width: 100%;
-    }
-
-    .gauge-icon {
-      --mdc-icon-size: 20px;
-      color: var(--secondary-text-color);
-      margin-bottom: 2px;
     }
 
     .gauge-svg {
@@ -187,11 +169,9 @@ export class AqmGauge extends LitElement {
       dominant-baseline: central;
     }
 
-    .unit-text {
-      font-size: 10px;
+    .unit-inline {
+      font-size: 11px;
       font-weight: 400;
-      font-family: var(--paper-font-common-base_-_font-family, 'Roboto', 'Noto Sans', sans-serif);
-      dominant-baseline: central;
     }
 
     .unavailable-text {
@@ -201,26 +181,40 @@ export class AqmGauge extends LitElement {
       dominant-baseline: central;
     }
 
+    .gauge-footer {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 2px;
+    }
+
+    .gauge-icon {
+      --mdc-icon-size: 16px;
+      color: var(--secondary-text-color);
+      flex-shrink: 0;
+    }
+
     .gauge-name {
       font-size: 11px;
       font-weight: 500;
-      text-align: center;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-top: 2px;
       line-height: 1.2;
-    }
-
-    :host([compact]) .gauge-icon {
-      display: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     :host([compact]) .value-text {
       font-size: 14px;
     }
 
-    :host([compact]) .unit-text {
+    :host([compact]) .unit-inline {
       font-size: 9px;
+    }
+
+    :host([compact]) .gauge-icon {
+      --mdc-icon-size: 14px;
     }
 
     :host([compact]) .gauge-name {

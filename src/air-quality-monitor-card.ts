@@ -158,6 +158,7 @@ export class AirQualityMonitorCard extends LitElement {
                   .severityColor=${data.severity.color}
                   .name=${data.name}
                   .unit=${data.unit}
+                  .showUnit=${data.config.show_unit !== false}
                   .icon=${data.icon}
                   .unavailable=${data.unavailable}
                   .compact=${!!config.compact}
@@ -240,11 +241,11 @@ export class AirQualityMonitorCard extends LitElement {
         );
         border: 1px solid var(--divider-color, rgba(0, 0, 0, 0.08));
         border-radius: 12px;
-        padding: 16px;
+        padding: 12px;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 8px;
+        gap: 4px;
         transition: background 0.2s, box-shadow 0.2s;
         box-sizing: border-box;
         min-width: 0;
@@ -260,7 +261,7 @@ export class AirQualityMonitorCard extends LitElement {
       .compact .entity-cell {
         padding: 8px;
         border-radius: 8px;
-        gap: 4px;
+        gap: 2px;
       }
 
       .entity-cell.unavailable {

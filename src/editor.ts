@@ -220,6 +220,15 @@ export class AirQualityMonitorCardEditor extends LitElement {
                   <span>Show sparkline</span>
                 </label>
 
+                <label class="toggle">
+                  <input
+                    type="checkbox"
+                    .checked=${entity.show_unit !== false}
+                    @change=${(ev: Event) => this._entityFieldChanged(index, 'show_unit', ev)}
+                  />
+                  <span>Show unit</span>
+                </label>
+
                 <button
                   class="remove-btn"
                   ?disabled=${entities.length <= 1}
