@@ -40,24 +40,30 @@ export class AirQualityMonitorCardEditor extends LitElement {
     fireEvent(this, 'config-changed', { config: this._config });
   }
 
-  private _entityChanged(index: number, ev: CustomEvent): void {
-    const value = ev.detail.value;
+  private _updateEntity(index: number, patch: Partial<MetricEntityConfig>): void {
     const entities = this._config?.entities?.map((e, i) =>
-      i === index ? { ...e, entity: value } : e,
+      i === index ? { ...e, ...patch } : e,
     );
     if (!entities) return;
     this._config = { ...this._config!, entities };
     fireEvent(this, 'config-changed', { config: this._config });
   }
 
-  private _entityNameChanged(index: number, ev: Event): void {
-    const value = (ev.target as HTMLInputElement).value;
-    const entities = this._config?.entities?.map((e, i) =>
-      i === index ? { ...e, name: value || undefined } : e,
-    );
-    if (!entities) return;
-    this._config = { ...this._config!, entities };
-    fireEvent(this, 'config-changed', { config: this._config });
+  private _entityChanged(index: number, ev: CustomEvent): void {
+    this._updateEntity(index, { entity: ev.detail.value });
+  }
+
+  private _entityFieldChanged(index: number, field: string, ev: Event): void {
+    const target = ev.target as HTMLInputElement;
+    let value: any = target.value;
+    if (field === 'min' || field === 'max') {
+      value = value === '' ? undefined : Number(value);
+      if (value !== undefined && isNaN(value)) return;
+    }
+    if (field === 'name') {
+      value = value || undefined;
+    }
+    this._updateEntity(index, { [field]: value });
   }
 
   private _removeEntity(index: number): void {
@@ -153,11 +159,29 @@ export class AirQualityMonitorCardEditor extends LitElement {
                   @value-changed=${(ev: CustomEvent) => this._entityChanged(index, ev)}
                 ></ha-entity-picker>
 
-                <ha-textfield
-                  label="Display name (optional)"
-                  .value=${entity.name ?? ''}
-                  @input=${(ev: Event) => this._entityNameChanged(index, ev)}
-                ></ha-textfield>
+                <div class="entity-fields">
+                  <ha-textfield
+                    label="Display name (optional)"
+                    .value=${entity.name ?? ''}
+                    @input=${(ev: Event) => this._entityFieldChanged(index, 'name', ev)}
+                  ></ha-textfield>
+
+                  <div class="minmax-row">
+                    <ha-textfield
+                      type="number"
+                      label="Min value"
+                      .value=${entity.min !== undefined ? String(entity.min) : ''}
+                      @input=${(ev: Event) => this._entityFieldChanged(index, 'min', ev)}
+                    ></ha-textfield>
+
+                    <ha-textfield
+                      type="number"
+                      label="Max value"
+                      .value=${entity.max !== undefined ? String(entity.max) : ''}
+                      @input=${(ev: Event) => this._entityFieldChanged(index, 'max', ev)}
+                    ></ha-textfield>
+                  </div>
+                </div>
 
                 <ha-button
                   class="remove-btn"
@@ -237,29 +261,28 @@ export class AirQualityMonitorCardEditor extends LitElement {
         margin-bottom: 8px;
       }
 
+      .entity-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .minmax-row {
+        display: flex;
+        gap: 8px;
+      }
+
+      .minmax-row > ha-textfield {
+        flex: 1;
+      }
+
       .remove-btn {
         --mdc-theme-primary: var(--error-color, #db4437);
-        align-self: flex-end;
+        align-self: flex-start;
       }
 
       .add-btn {
         margin-top: 4px;
-      }
-
-      @media (min-width: 600px) {
-        .entity-row {
-          flex-direction: row;
-          align-items: flex-start;
-        }
-
-        .entity-row > * {
-          flex: 1;
-          min-width: 0;
-        }
-
-        .entity-row > ha-button {
-          flex: 0 0 auto;
-        }
       }
     `;
   }
