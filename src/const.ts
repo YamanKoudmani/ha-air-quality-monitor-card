@@ -18,13 +18,13 @@ export const DEFAULT_SEVERITIES: Record<string, { min: number; max: number; seve
   },
   pm10: {
     min: 0,
-    max: 250,
-    severity: { good: 54, moderate: 154, unhealthy_sensitive: 254, unhealthy: 250 },
+    max: 300,
+    severity: { good: 54, moderate: 154, unhealthy_sensitive: 254, unhealthy: 300 },
   },
   pm1: {
     min: 0,
     max: 75,
-    severity: { good: 12, moderate: 35, unhealthy_sensitive: 55, unhealthy: 75 },
+    severity: { good: 8, moderate: 20, unhealthy_sensitive: 35, unhealthy: 75 },
   },
   co2: {
     min: 400,
@@ -38,8 +38,8 @@ export const DEFAULT_SEVERITIES: Record<string, { min: number; max: number; seve
   },
   hcho: {
     min: 0,
-    max: 1,
-    severity: { good: 0.03, moderate: 0.08, unhealthy_sensitive: 0.15, unhealthy: 1 },
+    max: 500,
+    severity: { good: 50, moderate: 100, unhealthy_sensitive: 200, unhealthy: 500 },
   },
   temperature: {
     min: 0,
