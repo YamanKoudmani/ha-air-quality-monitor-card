@@ -30,6 +30,7 @@ export class AirQualityMonitorCard extends LitElement {
   static getStubConfig(): Record<string, unknown> {
     return {
       type: 'custom:air-quality-monitor-card',
+      title: 'Air Quality Monitor',
       entities: [
         { entity: 'sensor.pm25' },
         { entity: 'sensor.co2' },
@@ -105,6 +106,14 @@ export class AirQualityMonitorCard extends LitElement {
     );
   }
 
+  /** Check whether a specific metric should show its sparkline */
+  private _shouldShowSparkline(data: MetricData, config: AirQualityCardConfig): boolean {
+    // Per-entity setting takes precedence, then fall back to global setting
+    const entitySetting = data.config.show_sparkline;
+    if (entitySetting !== undefined) return entitySetting;
+    return config.show_sparklines !== false;
+  }
+
   protected render(): unknown {
     if (!this._config) return nothing;
 
@@ -154,7 +163,7 @@ export class AirQualityMonitorCard extends LitElement {
                   .compact=${!!config.compact}
                 ></aqm-gauge>
 
-                ${config.show_sparklines !== false
+                ${this._shouldShowSparkline(data, config)
                   ? this._loading && data.history.length === 0
                     ? html`
                         <div class="sparkline-skeleton">

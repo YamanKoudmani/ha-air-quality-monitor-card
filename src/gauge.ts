@@ -5,76 +5,54 @@ import { describeArc, formatValue } from './utils';
 /**
  * Circular arc gauge component (aqm-gauge)
  *
- * Displays a single metric value as a semi-circular speedometer-style arc.
+ * Displays a single metric value as a speedometer-style arc.
+ * The arc opens at the bottom (120° gap) and sweeps 240° clockwise.
  * Supports severity coloring, unavailable state, and compact mode.
  */
 @customElement('aqm-gauge')
 export class AqmGauge extends LitElement {
-  /** Current value of the metric, or null if unknown */
-  @property({ type: Number })
-  value: number | null = null;
+  @property({ type: Number }) value: number | null = null;
+  @property({ type: Number }) min = 0;
+  @property({ type: Number }) max = 100;
+  @property({ type: String }) severityColor = '#9e9e9e';
+  @property({ type: String }) name = '';
+  @property({ type: String }) unit = '';
+  @property({ type: String }) icon = '';
+  @property({ type: Boolean, reflect: true }) unavailable = false;
+  @property({ type: Boolean, reflect: true }) compact = false;
 
-  /** Minimum value of the gauge range */
-  @property({ type: Number })
-  min = 0;
-
-  /** Maximum value of the gauge range */
-  @property({ type: Number })
-  max = 100;
-
-  /** Color for the current severity level */
-  @property({ type: String })
-  severityColor = '#9e9e9e';
-
-  /** Metric name label displayed below the value */
-  @property({ type: String })
-  name = '';
-
-  /** Unit label displayed below the value */
-  @property({ type: String })
-  unit = '';
-
-  /** MDI icon name (e.g. 'mdi:air-filter') shown above the value */
-  @property({ type: String })
-  icon = '';
-
-  /** Whether the entity is unavailable (grays everything out) */
-  @property({ type: Boolean, reflect: true })
-  unavailable = false;
-
-  /** Compact mode reduces font sizes and hides the icon */
-  @property({ type: Boolean, reflect: true })
-  compact = false;
-
-  // Gauge geometry — 240° arc from 150° to 390°
+  // Gauge geometry — 240° clockwise arc with 120° gap at the bottom
+  // Arc starts at 240° (lower-left, ~8 o'clock) and ends at 120° (lower-right, ~4 o'clock)
   private readonly cx = 60;
   private readonly cy = 42;
   private readonly radius = 30;
-  private readonly startAngle = 150;
-  private readonly endAngle = 390;
+  private readonly arcStart = 240;  // lower-left
+  private readonly arcEnd = 120;     // lower-right
+  private readonly totalSweep = 240; // degrees
   private readonly strokeWidth = 7;
 
   /** 0..1 fraction of the arc that should be filled */
   private get ratio(): number {
     if (this.value === null || this.value === undefined) return 0;
+    if (this.max === this.min) return 0;
     const r = (this.value - this.min) / (this.max - this.min);
     return Math.max(0, Math.min(1, r));
   }
 
-  /** End-angle for the filled portion of the arc (degrees) */
+  /** Angle where the filled portion ends (clockwise from arcStart) */
   private get filledAngle(): number {
-    return this.startAngle + this.ratio * (this.endAngle - this.startAngle);
+    return (this.arcStart + this.ratio * this.totalSweep) % 360;
   }
 
-  /** SVG path for the full background arc (always gray) */
+  /** SVG path for the full background arc */
   private get backgroundArcPath(): string {
-    return describeArc(this.cx, this.cy, this.radius, this.startAngle, this.endAngle);
+    return describeArc(this.cx, this.cy, this.radius, this.arcStart, this.arcEnd);
   }
 
   /** SVG path for the filled portion of the arc */
   private get filledArcPath(): string {
-    if (this.value === null || this.value === undefined) return '';
-    return describeArc(this.cx, this.cy, this.radius, this.startAngle, this.filledAngle);
+    if (this.value === null || this.value === undefined || this.ratio <= 0) return '';
+    return describeArc(this.cx, this.cy, this.radius, this.arcStart, this.filledAngle);
   }
 
   render() {
@@ -110,7 +88,7 @@ export class AqmGauge extends LitElement {
           />
 
           <!-- Foreground arc (severity colored) -->
-          ${this.value !== null && !this.unavailable
+          ${this.ratio > 0 && !this.unavailable
             ? html`
                 <path
                   d="${this.filledArcPath}"
@@ -233,7 +211,6 @@ export class AqmGauge extends LitElement {
       line-height: 1.2;
     }
 
-    /* Compact mode */
     :host([compact]) .gauge-icon {
       display: none;
     }

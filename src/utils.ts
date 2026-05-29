@@ -102,7 +102,7 @@ export function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
-/** Generate SVG arc path for a gauge */
+/** Generate SVG arc path for a gauge (clockwise from startAngle to endAngle) */
 export function describeArc(
   cx: number,
   cy: number,
@@ -110,10 +110,15 @@ export function describeArc(
   startAngle: number,
   endAngle: number,
 ): string {
-  const start = polarToCartesian(cx, cy, radius, endAngle);
-  const end = polarToCartesian(cx, cy, radius, startAngle);
-  const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
-  return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
+  const start = polarToCartesian(cx, cy, radius, startAngle);
+  const end = polarToCartesian(cx, cy, radius, endAngle);
+  // Calculate clockwise sweep from start to end
+  let sweep = endAngle - startAngle;
+  if (sweep < 0) sweep += 360;
+  if (sweep === 0) sweep = 360; // full circle
+  const largeArcFlag = sweep > 180 ? '1' : '0';
+  // sweep-flag=1 for clockwise
+  return `M ${start.x.toFixed(2)} ${start.y.toFixed(2)} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${end.x.toFixed(2)} ${end.y.toFixed(2)}`;
 }
 
 function polarToCartesian(cx: number, cy: number, radius: number, angleDeg: number) {

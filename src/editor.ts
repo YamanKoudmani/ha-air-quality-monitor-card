@@ -54,6 +54,9 @@ export class AirQualityMonitorCardEditor extends LitElement {
     if (field === 'name') {
       value = value || undefined;
     }
+    if (field === 'show_sparkline') {
+      value = (ev.target as HTMLInputElement).checked;
+    }
     this._updateEntity(index, { [field]: value });
   }
 
@@ -95,7 +98,7 @@ export class AirQualityMonitorCardEditor extends LitElement {
           <input
             type="text"
             class="ha-input"
-            placeholder="Optional card title"
+            placeholder="Air Quality Monitor"
             .value=${config.title ?? ''}
             data-config-value="title"
             @input=${this._valueChanged}
@@ -207,6 +210,15 @@ export class AirQualityMonitorCardEditor extends LitElement {
                     />
                   </div>
                 </div>
+
+                <label class="toggle">
+                  <input
+                    type="checkbox"
+                    .checked=${entity.show_sparkline !== false}
+                    @change=${(ev: Event) => this._entityFieldChanged(index, 'show_sparkline', ev)}
+                  />
+                  <span>Show sparkline</span>
+                </label>
 
                 <button
                   class="remove-btn"

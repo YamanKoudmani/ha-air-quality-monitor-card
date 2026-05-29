@@ -21,6 +21,7 @@ export interface MetricEntityConfig {
   severity?: SeverityConfig;
   color?: string;
   precision?: number;
+  show_sparkline?: boolean;
 }
 
 /** Main card configuration */
