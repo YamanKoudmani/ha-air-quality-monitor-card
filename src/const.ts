@@ -9,6 +9,7 @@ export const DEFAULT_SPARKLINE_HOURS = 24;
 export const DEFAULT_SHOW_SPARKLINES = true;
 export const DEFAULT_COMPACT = false;
 export const DEFAULT_SMOOTH_SPARKLINES = false;
+export const DEFAULT_STEP_SPARKLINES = true;
 
 /** Default severity thresholds for common air quality metrics */
 export const DEFAULT_SEVERITIES: Record<string, { min: number; max: number; severity: Record<string, number> }> = {

@@ -9,6 +9,7 @@ import {
   DEFAULT_SPARKLINE_HOURS,
   DEFAULT_COMPACT,
   DEFAULT_SMOOTH_SPARKLINES,
+  DEFAULT_STEP_SPARKLINES,
 } from './const';
 
 @customElement('air-quality-monitor-card-editor')
@@ -168,6 +169,16 @@ export class AirQualityMonitorCardEditor extends LitElement {
               @change=${this._valueChanged}
             />
             <span>Smooth sparklines</span>
+          </label>
+
+          <label class="toggle">
+            <input
+              type="checkbox"
+              .checked=${config.step_sparklines ?? DEFAULT_STEP_SPARKLINES}
+              data-config-value="step_sparklines"
+              @change=${this._valueChanged}
+            />
+            <span>Step interpolation</span>
           </label>
         </div>
 

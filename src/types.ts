@@ -35,6 +35,7 @@ export interface AirQualityCardConfig extends LovelaceCardConfig {
   sparkline_hours?: number;
   compact?: boolean;
   smooth_sparklines?: boolean;
+  step_sparklines?: boolean;
   tap_action?: ActionConfig;
   hold_action?: ActionConfig;
 }

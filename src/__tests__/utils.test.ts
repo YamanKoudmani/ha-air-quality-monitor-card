@@ -8,6 +8,8 @@ import {
   generateSparklineAreaPath,
   generateSmoothSparklinePath,
   generateSmoothSparklineAreaPath,
+  generateStepSparklinePath,
+  generateStepSparklineAreaPath,
   detectTrend,
 } from '../utils';
 import {
@@ -425,6 +427,77 @@ describe('generateSmoothSparklineAreaPath', () => {
       { timestamp: 3, value: 15 },
     ];
     const path = generateSmoothSparklineAreaPath(points, 120, 40);
+    expect(path).toMatch(/Z$/);
+  });
+});
+
+// ─── generateStepSparklinePath ─────────────────────────────────────────
+describe('generateStepSparklinePath', () => {
+  it('returns empty string for fewer than 2 points', () => {
+    expect(generateStepSparklinePath([], 120, 40)).toBe('');
+    expect(generateStepSparklinePath([{ timestamp: 1, value: 5 }], 120, 40)).toBe('');
+  });
+
+  it('starts with M command', () => {
+    const points = [
+      { timestamp: 0, value: 10 },
+      { timestamp: 100, value: 20 },
+    ];
+    const path = generateStepSparklinePath(points, 120, 40);
+    expect(path).toMatch(/^M /);
+  });
+
+  it('produces horizontal-then-vertical segments (staircase)', () => {
+    const points = [
+      { timestamp: 0, value: 10 },
+      { timestamp: 100, value: 20 },
+    ];
+    const path = generateStepSparklinePath(points, 120, 40);
+    // Should have M, then L (horizontal hold), then L (vertical jump)
+    const commands = path.split(' ');
+    // M x y L x y L x y = 9 tokens
+    expect(commands).toHaveLength(9);
+  });
+
+  it('holds value horizontally until next timestamp (step behavior)', () => {
+    const points = [
+      { timestamp: 0, value: 10 },
+      { timestamp: 100, value: 20 },
+    ];
+    const path = generateStepSparklinePath(points, 120, 40);
+    // Parse: M x1 y1 L x2 y1_hold L x2 y2
+    // Split by space: ['M', 'x1', 'y1', 'L', 'x2', 'y1_hold', 'L', 'x2', 'y2']
+    const parts = path.split(' ');
+    const startY = parseFloat(parts[2]);      // y of M (index 2)
+    const holdY = parseFloat(parts[5]);         // y of horizontal hold L (index 5)
+    expect(holdY).toBeCloseTo(startY, 1);
+  });
+
+  it('uses time-proportional x positioning', () => {
+    const points = [
+      { timestamp: 0, value: 10 },
+      { timestamp: 60, value: 20 },
+      { timestamp: 360, value: 15 },
+    ];
+    const path = generateStepSparklinePath(points, 120, 40);
+    const moves = path.match(/[ML]\s+[\d.]+\s+[\d.]+/g);
+    expect(moves).toBeDefined();
+    expect(moves!.length).toBeGreaterThanOrEqual(3);
+  });
+});
+
+// ─── generateStepSparklineAreaPath ──────────────────────────────────────
+describe('generateStepSparklineAreaPath', () => {
+  it('returns empty string for fewer than 2 points', () => {
+    expect(generateStepSparklineAreaPath([], 120, 40)).toBe('');
+  });
+
+  it('ends with Z (closed path)', () => {
+    const points = [
+      { timestamp: 0, value: 10 },
+      { timestamp: 100, value: 20 },
+    ];
+    const path = generateStepSparklineAreaPath(points, 120, 40);
     expect(path).toMatch(/Z$/);
   });
 });

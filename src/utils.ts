@@ -259,6 +259,65 @@ export function generateSmoothSparklineAreaPath(
   return `${linePath} L ${lastX.toFixed(1)} ${height - padding} L ${padding} ${height - padding} Z`;
 }
 
+/** Generate step-interpolation sparkline path (time-proportional x-axis)
+ *  Each reading holds its value until the next reading, creating a staircase.
+ */
+export function generateStepSparklinePath(
+  points: HistoryPoint[],
+  width: number,
+  height: number,
+  padding: number = 2,
+): string {
+  if (points.length < 2) return '';
+
+  const values = points.map(p => p.value);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+
+  const effectiveWidth = width - padding * 2;
+  const effectiveHeight = height - padding * 2;
+
+  const minTime = points[0].timestamp;
+  const maxTime = points[points.length - 1].timestamp;
+
+  const segments: string[] = [];
+
+  for (let i = 0; i < points.length; i++) {
+    const x = timestampToX(points[i].timestamp, minTime, maxTime, effectiveWidth, padding);
+    const y = padding + effectiveHeight - ((points[i].value - min) / range) * effectiveHeight;
+
+    if (i === 0) {
+      segments.push(`M ${x.toFixed(1)} ${y.toFixed(1)}`);
+    } else {
+      // Horizontal hold at previous value to current x, then vertical jump
+      const prevY = padding + effectiveHeight - ((points[i - 1].value - min) / range) * effectiveHeight;
+      segments.push(`L ${x.toFixed(1)} ${prevY.toFixed(1)}`);
+      segments.push(`L ${x.toFixed(1)} ${y.toFixed(1)}`);
+    }
+  }
+
+  return segments.join(' ');
+}
+
+/** Generate step-interpolation filled area path for sparkline */
+export function generateStepSparklineAreaPath(
+  points: HistoryPoint[],
+  width: number,
+  height: number,
+  padding: number = 2,
+): string {
+  if (points.length < 2) return '';
+
+  const linePath = generateStepSparklinePath(points, width, height, padding);
+  const effectiveWidth = width - padding * 2;
+  const minTime = points[0].timestamp;
+  const maxTime = points[points.length - 1].timestamp;
+  const lastX = timestampToX(maxTime, minTime, maxTime, effectiveWidth, padding);
+
+  return `${linePath} L ${lastX.toFixed(1)} ${height - padding} L ${padding} ${height - padding} Z`;
+}
+
 /** Debounce function */
 export function debounce<T extends (...args: any[]) => void>(fn: T, delay: number): T {
   let timer: ReturnType<typeof setTimeout>;

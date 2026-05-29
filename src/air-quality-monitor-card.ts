@@ -11,6 +11,7 @@ import {
   DEFAULT_SPARKLINE_HOURS,
   DEFAULT_COMPACT,
   DEFAULT_SMOOTH_SPARKLINES,
+  DEFAULT_STEP_SPARKLINES,
 } from './const';
 import { resolveMetricData, fetchHistory, detectTrend } from './utils';
 import './editor';
@@ -42,6 +43,7 @@ export class AirQualityMonitorCard extends LitElement {
       sparkline_hours: DEFAULT_SPARKLINE_HOURS,
       compact: DEFAULT_COMPACT,
       smooth_sparklines: DEFAULT_SMOOTH_SPARKLINES,
+      step_sparklines: DEFAULT_STEP_SPARKLINES,
     };
   }
 
@@ -66,6 +68,7 @@ export class AirQualityMonitorCard extends LitElement {
       sparkline_hours: config.sparkline_hours ?? DEFAULT_SPARKLINE_HOURS,
       compact: config.compact ?? DEFAULT_COMPACT,
       smooth_sparklines: config.smooth_sparklines ?? DEFAULT_SMOOTH_SPARKLINES,
+      step_sparklines: config.step_sparklines ?? DEFAULT_STEP_SPARKLINES,
     };
   }
 
@@ -179,14 +182,15 @@ export class AirQualityMonitorCard extends LitElement {
 
                   ${this._shouldShowSparkline(data, config)
                     ? html`
-                        <aqm-sparkline
-                          .data=${data.history}
-                          .color=${data.severity.color}
-                          .severity=${data.config.severity as Record<string, number> | undefined}
-                          .min=${data.config.min ?? 0}
-                          .max=${data.config.max ?? 100}
-                          .smooth=${config.smooth_sparklines !== false}
-                        ></aqm-sparkline>
+<aqm-sparkline
+                           .data=${data.history}
+                           .color=${data.severity.color}
+                           .severity=${data.config.severity as Record<string, number> | undefined}
+                           .min=${data.config.min ?? 0}
+                           .max=${data.config.max ?? 100}
+                           .smooth=${config.smooth_sparklines === true}
+                           .step=${config.step_sparklines !== false}
+                         ></aqm-sparkline>
                       `
                     : nothing}
                 </div>

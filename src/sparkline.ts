@@ -1,7 +1,7 @@
 ﻿import { LitElement, css, html } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { HistoryPoint } from './types';
-import { generateSparklinePath, generateSparklineAreaPath, generateSmoothSparklinePath, generateSmoothSparklineAreaPath } from './utils';
+import { generateSparklinePath, generateSparklineAreaPath, generateSmoothSparklinePath, generateSmoothSparklineAreaPath, generateStepSparklinePath, generateStepSparklineAreaPath } from './utils';
 import { getSeverity, SEVERITY_COLORS, SEVERITY_ORDER } from './const';
 
 let instanceCounter = 0;
@@ -31,17 +31,24 @@ export class AqmSparkline extends LitElement {
   @property({ type: Number }) width = 120;
   @property({ type: Number }) height = 40;
   @property({ type: Boolean }) smooth = false;
+  @property({ type: Boolean }) step = true;
 
   private areaGradientId = `spark-area-${++instanceCounter}`;
   private lineGradientId = `spark-line-${instanceCounter}`;
 
   private get linePath(): string {
+    if (this.step) {
+      return generateStepSparklinePath(this.data, this.width, this.height);
+    }
     return this.smooth
       ? generateSmoothSparklinePath(this.data, this.width, this.height)
       : generateSparklinePath(this.data, this.width, this.height);
   }
 
   private get areaPath(): string {
+    if (this.step) {
+      return generateStepSparklineAreaPath(this.data, this.width, this.height);
+    }
     return this.smooth
       ? generateSmoothSparklineAreaPath(this.data, this.width, this.height)
       : generateSparklineAreaPath(this.data, this.width, this.height);
