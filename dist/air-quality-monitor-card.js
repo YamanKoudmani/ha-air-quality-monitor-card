@@ -313,8 +313,15 @@ function t(t,e,i,s){var n,o=arguments.length,r=o<3?e:null===s?s=Object.getOwnPro
       ha-entity-picker {
         width: 100%;
       }
-    `}};t([pt({attribute:!1})],Ut.prototype,"hass",void 0),t([ut()],Ut.prototype,"_config",void 0),Ut=t([ct("air-quality-monitor-card-editor")],Ut);let Ot=class extends at{constructor(){super(...arguments),this.value=null,this.min=0,this.max=100,this.severityColor="#9e9e9e",this.name="",this.unit="",this.showUnit=!0,this.icon="",this.unavailable=!1,this.compact=!1,this.cx=60,this.cy=40,this.radius=28,this.arcStart=330,this.arcEnd=210,this.totalSweep=240,this.strokeWidth=7}get ratio(){if(null===this.value||void 0===this.value)return 0;if(this.max===this.min)return 0;const t=(this.value-this.min)/(this.max-this.min);return Math.max(0,Math.min(1,t))}get filledAngle(){return(this.arcStart+this.ratio*this.totalSweep)%360}get backgroundArcPath(){return St(this.cx,this.cy,this.radius,this.arcStart,this.arcEnd)}get filledArcPath(){return null===this.value||void 0===this.value||this.ratio<=0?"":St(this.cx,this.cy,this.radius,this.arcStart,this.filledAngle)}render(){const t=this.unavailable?"—":function(t){if(null===t||isNaN(t))return"—";const e=Math.abs(t)<10?1:0;return t.toFixed(e)}(this.value),e=this.unavailable?"#bdbdbd":this.severityColor,i=this.unavailable?"var(--disabled-text-color, #9e9e9e)":"var(--primary-text-color)",s=this.unavailable?"var(--disabled-text-color, #9e9e9e)":"var(--secondary-text-color)",n=this.showUnit&&this.unit?B`${t}<tspan class="unit-inline"> ${this.unit}</tspan>`:B`${t}`;return B`
+    `}};t([pt({attribute:!1})],Ut.prototype,"hass",void 0),t([ut()],Ut.prototype,"_config",void 0),Ut=t([ct("air-quality-monitor-card-editor")],Ut);let Ot=class extends at{constructor(){super(...arguments),this.value=null,this.min=0,this.max=100,this.severityColor="#9e9e9e",this.name="",this.unit="",this.showUnit=!0,this.icon="",this.unavailable=!1,this.compact=!1,this.cx=60,this.cy=38,this.radius=28,this.arcStart=225,this.arcEnd=135,this.totalSweep=270,this.strokeWidth=7}get ratio(){if(null===this.value||void 0===this.value)return 0;if(this.max===this.min)return 0;const t=(this.value-this.min)/(this.max-this.min);return Math.max(0,Math.min(1,t))}get filledAngle(){return(this.arcStart+this.ratio*this.totalSweep)%360}get backgroundArcPath(){return St(this.cx,this.cy,this.radius,this.arcStart,this.arcEnd)}get filledArcPath(){return null===this.value||void 0===this.value||this.ratio<=0?"":St(this.cx,this.cy,this.radius,this.arcStart,this.filledAngle)}render(){const t=this.unavailable?"—":function(t){if(null===t||isNaN(t))return"—";const e=Math.abs(t)<10?1:0;return t.toFixed(e)}(this.value),e=this.unavailable?"#bdbdbd":this.severityColor,i=this.unavailable?"var(--disabled-text-color, #9e9e9e)":"var(--primary-text-color)",s=this.unavailable?"var(--disabled-text-color, #9e9e9e)":"var(--secondary-text-color)";return B`
       <div class="gauge-container">
+        ${this.icon&&!this.unavailable?B`<ha-icon .icon=${this.icon} class="gauge-icon"></ha-icon>`:W}
+
+        <div class="gauge-value-area">
+          <span class="value-number" style="color: ${i}">${t}</span>
+          ${this.showUnit&&this.unit&&!this.unavailable?B`<span class="value-unit" style="color: ${s}">${this.unit}</span>`:W}
+        </div>
+
         <svg
           viewBox="0 0 120 72"
           class="gauge-svg"
@@ -330,7 +337,7 @@ function t(t,e,i,s){var n,o=arguments.length,r=o<3?e:null===s?s=Object.getOwnPro
             stroke-linecap="round"
           />
 
-          <!-- Foreground arc (severity colored) -->
+          <!-- Foreground arc -->
           ${this.ratio>0&&!this.unavailable?B`
                 <path
                   d="${this.filledArcPath}"
@@ -341,32 +348,9 @@ function t(t,e,i,s){var n,o=arguments.length,r=o<3?e:null===s?s=Object.getOwnPro
                   class="arc-fill"
                 />
               `:W}
-
-          <!-- Value text -->
-          <text
-            x="60"
-            y="${this.compact?40:42}"
-            text-anchor="middle"
-            fill="${i}"
-            class="value-text"
-          >${n}</text>
-
-          <!-- Unavailable label -->
-          ${this.unavailable?B`
-                <text
-                  x="60"
-                  y="42"
-                  text-anchor="middle"
-                  fill="var(--disabled-text-color, #9e9e9e)"
-                  class="unavailable-text"
-                >N/A</text>
-              `:W}
         </svg>
 
-        <div class="gauge-footer">
-          ${!this.icon||this.compact||this.unavailable?W:B`<ha-icon .icon=${this.icon} class="gauge-icon"></ha-icon>`}
-          ${this.name?B`<span class="gauge-name" style="color: ${s}">${this.name}</span>`:W}
-        </div>
+        ${this.name?B`<div class="gauge-name" style="color: ${s}">${this.name}</div>`:W}
       </div>
     `}static{this.styles=r`
     :host {
@@ -379,72 +363,79 @@ function t(t,e,i,s){var n,o=arguments.length,r=o<3?e:null===s?s=Object.getOwnPro
       flex-direction: column;
       align-items: center;
       width: 100%;
+      position: relative;
+    }
+
+    .gauge-icon {
+      position: absolute;
+      top: 2px;
+      right: 4px;
+      --mdc-icon-size: 18px;
+      color: var(--secondary-text-color);
+      z-index: 1;
+    }
+
+    .gauge-value-area {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -65%);
+      display: flex;
+      align-items: baseline;
+      gap: 3px;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .value-number {
+      font-size: 20px;
+      font-weight: 600;
+      font-family: var(--paper-font-common-base_-_font-family, 'Roboto', 'Noto Sans', sans-serif);
+      line-height: 1;
+    }
+
+    .value-unit {
+      font-size: 11px;
+      font-weight: 400;
+      font-family: var(--paper-font-common-base_-_font-family, 'Roboto', 'Noto Sans', sans-serif);
+      line-height: 1;
     }
 
     .gauge-svg {
       width: 100%;
       height: auto;
       display: block;
-      overflow: visible;
     }
 
     .arc-fill {
       transition: stroke 0.3s ease;
     }
 
-    .value-text {
-      font-size: 18px;
-      font-weight: 600;
-      font-family: var(--paper-font-common-base_-_font-family, 'Roboto', 'Noto Sans', sans-serif);
-      dominant-baseline: central;
-    }
-
-    .unit-inline {
-      font-size: 11px;
-      font-weight: 400;
-    }
-
-    .unavailable-text {
-      font-size: 11px;
-      font-weight: 500;
-      font-family: var(--paper-font-common-base_-_font-family, 'Roboto', 'Noto Sans', sans-serif);
-      dominant-baseline: central;
-    }
-
-    .gauge-footer {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      margin-top: 2px;
-    }
-
-    .gauge-icon {
-      --mdc-icon-size: 16px;
-      color: var(--secondary-text-color);
-      flex-shrink: 0;
-    }
-
     .gauge-name {
       font-size: 11px;
       font-weight: 500;
+      text-align: center;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      line-height: 1.2;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    :host([compact]) .value-text {
-      font-size: 14px;
-    }
-
-    :host([compact]) .unit-inline {
-      font-size: 9px;
+      margin-top: 2px;
+      line-height: 1.3;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      max-width: 100%;
     }
 
     :host([compact]) .gauge-icon {
       --mdc-icon-size: 14px;
+      top: 0;
+      right: 2px;
+    }
+
+    :host([compact]) .value-number {
+      font-size: 16px;
+    }
+
+    :host([compact]) .value-unit {
+      font-size: 9px;
     }
 
     :host([compact]) .gauge-name {
