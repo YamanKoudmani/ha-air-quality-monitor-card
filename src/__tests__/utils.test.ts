@@ -233,6 +233,41 @@ describe('generateSparklinePath', () => {
     const path = generateSparklinePath(points, 120, 40);
     expect(path).toContain('L ');
   });
+
+  it('positions points proportionally to timestamps (not evenly by index)', () => {
+    // Points at t=0, t=60, t=360 (6 hours apart) in a 360-unit window
+    // The middle point at t=60 should be at ~16.7% across, not 50%
+    const points = [
+      { timestamp: 0, value: 10 },
+      { timestamp: 60, value: 20 },
+      { timestamp: 360, value: 15 },
+    ];
+    const path = generateSparklinePath(points, 120, 40);
+    const coords = path.split(' ').filter(cmd => cmd === 'M' || cmd === 'L' || !isNaN(parseFloat(cmd)));
+    // Parse x positions from the path
+    const moves = path.match(/[ML]\s+[\d.]+\s+[\d.]+/g);
+    expect(moves).toHaveLength(3);
+    // First point at x≈2 (padding), last at x≈118 (width-padding)
+    // Middle point should be at ~16.7% of effective width + padding
+    const middleX = parseFloat(moves![1].split(/\s+/)[1]);
+    const expectedMiddleX = 2 + (60 / 360) * 116; // padding + (60/360) * effectiveWidth
+    expect(middleX).toBeCloseTo(expectedMiddleX, 0);
+  });
+
+  it('places evenly-timed points at equal intervals', () => {
+    const points = [
+      { timestamp: 0, value: 10 },
+      { timestamp: 100, value: 20 },
+      { timestamp: 200, value: 15 },
+    ];
+    const path = generateSparklinePath(points, 120, 40);
+    const moves = path.match(/[ML]\s+[\d.]+\s+[\d.]+/g);
+    const x0 = parseFloat(moves![0].split(/\s+/)[1]);
+    const x1 = parseFloat(moves![1].split(/\s+/)[1]);
+    const x2 = parseFloat(moves![2].split(/\s+/)[1]);
+    // x1 should be exactly midway between x0 and x2
+    expect(x1).toBeCloseTo((x0 + x2) / 2, 1);
+  });
 });
 
 // ─── generateSparklineAreaPath ────────────────────────────────────────

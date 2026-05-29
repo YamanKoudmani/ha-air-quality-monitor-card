@@ -129,7 +129,19 @@ export function polarToCartesian(cx: number, cy: number, radius: number, angleDe
   };
 }
 
-/** Generate SVG sparkline path from history points */
+/** Map a timestamp to an x position within the sparkline width */
+function timestampToX(
+  timestamp: number,
+  minTime: number,
+  maxTime: number,
+  effectiveWidth: number,
+  padding: number,
+): number {
+  const timeRange = maxTime - minTime || 1;
+  return padding + ((timestamp - minTime) / timeRange) * effectiveWidth;
+}
+
+/** Generate SVG sparkline path from history points (time-proportional x-axis) */
 export function generateSparklinePath(
   points: HistoryPoint[],
   width: number,
@@ -146,18 +158,19 @@ export function generateSparklinePath(
   const effectiveWidth = width - padding * 2;
   const effectiveHeight = height - padding * 2;
 
-  const stepX = effectiveWidth / (points.length - 1);
+  const minTime = points[0].timestamp;
+  const maxTime = points[points.length - 1].timestamp;
 
   return points
     .map((point, i) => {
-      const x = padding + i * stepX;
+      const x = timestampToX(point.timestamp, minTime, maxTime, effectiveWidth, padding);
       const y = padding + effectiveHeight - ((point.value - min) / range) * effectiveHeight;
       return `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
     })
     .join(' ');
 }
 
-/** Generate filled area path for sparkline */
+/** Generate filled area path for sparkline (time-proportional x-axis) */
 export function generateSparklineAreaPath(
   points: HistoryPoint[],
   width: number,
@@ -168,13 +181,14 @@ export function generateSparklineAreaPath(
 
   const linePath = generateSparklinePath(points, width, height, padding);
   const effectiveWidth = width - padding * 2;
-  const stepX = effectiveWidth / (points.length - 1);
-  const lastX = padding + (points.length - 1) * stepX;
+  const minTime = points[0].timestamp;
+  const maxTime = points[points.length - 1].timestamp;
+  const lastX = timestampToX(maxTime, minTime, maxTime, effectiveWidth, padding);
 
   return `${linePath} L ${lastX.toFixed(1)} ${height - padding} L ${padding} ${height - padding} Z`;
 }
 
-/** Generate smooth SVG sparkline path using Catmull-Rom → cubic Bézier */
+/** Generate smooth SVG sparkline path using Catmull-Rom → cubic Bézier (time-proportional x-axis) */
 export function generateSmoothSparklinePath(
   points: HistoryPoint[],
   width: number,
@@ -192,17 +206,18 @@ export function generateSmoothSparklinePath(
 
   const effectiveWidth = width - padding * 2;
   const effectiveHeight = height - padding * 2;
-  const stepX = effectiveWidth / (points.length - 1);
 
-  // Convert data points to SVG coordinates
-  const coords = points.map((point, i) => ({
-    x: padding + i * stepX,
+  const minTime = points[0].timestamp;
+  const maxTime = points[points.length - 1].timestamp;
+
+  // Convert data points to SVG coordinates (time-proportional x)
+  const coords = points.map((point) => ({
+    x: timestampToX(point.timestamp, minTime, maxTime, effectiveWidth, padding),
     y: padding + effectiveHeight - ((point.value - min) / range) * effectiveHeight,
   }));
 
   // Build path using Catmull-Rom → cubic Bézier conversion
   // tension controls how tight the curve is (0 = no smoothing, 1 = very loose)
-  // We use tension * (1/6) as the control point offset factor for slight smoothing
   const segments: string[] = [`M ${coords[0].x.toFixed(1)} ${coords[0].y.toFixed(1)}`];
 
   for (let i = 0; i < coords.length - 1; i++) {
@@ -225,7 +240,7 @@ export function generateSmoothSparklinePath(
   return segments.join(' ');
 }
 
-/** Generate smooth filled area path for sparkline */
+/** Generate smooth filled area path for sparkline (time-proportional x-axis) */
 export function generateSmoothSparklineAreaPath(
   points: HistoryPoint[],
   width: number,
@@ -237,8 +252,9 @@ export function generateSmoothSparklineAreaPath(
 
   const linePath = generateSmoothSparklinePath(points, width, height, padding, tension);
   const effectiveWidth = width - padding * 2;
-  const stepX = effectiveWidth / (points.length - 1);
-  const lastX = padding + (points.length - 1) * stepX;
+  const minTime = points[0].timestamp;
+  const maxTime = points[points.length - 1].timestamp;
+  const lastX = timestampToX(maxTime, minTime, maxTime, effectiveWidth, padding);
 
   return `${linePath} L ${lastX.toFixed(1)} ${height - padding} L ${padding} ${height - padding} Z`;
 }

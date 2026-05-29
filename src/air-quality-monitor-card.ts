@@ -279,18 +279,7 @@ export class AirQualityMonitorCard extends LitElement {
         text-align: center;
       }
 
-      /* Responsive overrides for narrow screens */
-      @media (max-width: 480px) {
-        .grid {
-          grid-template-columns: repeat(2, 1fr) !important;
-        }
-      }
-
-      @media (max-width: 340px) {
-        .grid {
-          grid-template-columns: 1fr !important;
-        }
-      }
+      
     `;
   }
 }
