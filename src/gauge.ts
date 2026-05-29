@@ -1,6 +1,6 @@
-﻿import { LitElement, css, html, nothing } from 'lit';
+﻿import { LitElement, css, html } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { describeArc, formatValue } from './utils';
+import { formatValue } from './utils';
 
 /**
  * Circular arc gauge component (aqm-gauge)
@@ -8,8 +8,10 @@ import { describeArc, formatValue } from './utils';
  * Speedometer-style arc: 270° sweep with 90° gap at the bottom.
  * Arc goes clockwise from lower-left (225°) through top to lower-right (135°).
  *
- * The filled portion uses stroke-dasharray with the computed arc length
- * to reliably show the progress arc.
+ * IMPORTANT: Both <path> elements must be in the outer template (directly
+ * inside <svg>) to ensure Lit creates them as SVGPathElement. Nested html``
+ * templates inside <svg> lose the SVG namespace context, causing elements
+ * to be created as HTMLUnknownElement (invisible to the SVG renderer).
  */
 @customElement('aqm-gauge')
 export class AqmGauge extends LitElement {
@@ -25,8 +27,6 @@ export class AqmGauge extends LitElement {
   @property({ type: Boolean, reflect: true }) compact = false;
 
   // Gauge geometry
-  // Convention: 0°=top, 90°=right, 180°=bottom, 270°=left, clockwise
-  // Arc: 225° (lower-left) → clockwise → 135° (lower-right) = 270° sweep, 90° gap at bottom
   private readonly cx = 60;
   private readonly cy = 38;
   private readonly radius = 28;
@@ -35,6 +35,21 @@ export class AqmGauge extends LitElement {
   private readonly totalSweep = 270;
   private readonly strokeWidth = 7;
 
+  /** Circumference of the gauge circle */
+  private readonly circumference = 2 * Math.PI * this.radius;
+
+  /** Arc length of the 270° sweep */
+  private readonly arcLength = this.circumference * (this.totalSweep / 360);
+
+  /** Gap length (90°) */
+  private readonly gapLength = this.circumference - this.arcLength;
+
+  /** Rotation to start the arc at 225° (lower-left).
+   *  SVG circles start at 3 o'clock (90° in our convention).
+   *  We want to start at 225°, so rotate by 225° - 90° = 135°.
+   */
+  private readonly startRotation = this.arcStart - 90;
+
   private get ratio(): number {
     if (this.value === null || this.value === undefined) return 0;
     if (this.max === this.min) return 0;
@@ -42,18 +57,10 @@ export class AqmGauge extends LitElement {
     return Math.max(0, Math.min(1, r));
   }
 
-  /** Total arc length of the 270° gauge arc */
-  private get arcLength(): number {
-    return 2 * Math.PI * this.radius * (this.totalSweep / 360);
-  }
-
-  private get arcPath(): string {
-    return describeArc(this.cx, this.cy, this.radius, this.arcStart, this.arcEnd);
-  }
-
   render() {
     const displayValue = this.unavailable ? '—' : formatValue(this.value);
-    const arcColor = this.unavailable ? '#bdbdbd' : this.severityColor;
+    const showFill = this.ratio > 0 && !this.unavailable;
+    const arcColor = showFill ? this.severityColor : 'none';
     const textColor = this.unavailable
       ? 'var(--disabled-text-color, #9e9e9e)'
       : 'var(--primary-text-color)';
@@ -62,19 +69,24 @@ export class AqmGauge extends LitElement {
       : 'var(--secondary-text-color)';
 
     const filledLen = this.ratio * this.arcLength;
-    const totalLen = this.arcLength;
+    const bgDash = `${this.arcLength} ${this.gapLength}`;
+    const fgDash = showFill
+      ? `${filledLen} ${this.circumference - filledLen}`
+      : `0 ${this.circumference}`;
+
+    const rotation = `rotate(${this.startRotation} ${this.cx} ${this.cy})`;
 
     return html`
       <div class="gauge-container">
         ${this.icon && !this.unavailable
           ? html`<ha-icon .icon=${this.icon} class="gauge-icon"></ha-icon>`
-          : nothing}
+          : ''}
 
         <div class="gauge-value-area">
           <span class="value-number" style="color: ${textColor}">${displayValue}</span>
           ${this.showUnit && this.unit && !this.unavailable
             ? html`<span class="value-unit" style="color: ${subColor}">${this.unit}</span>`
-            : nothing}
+            : ''}
         </div>
 
         <svg
@@ -83,34 +95,37 @@ export class AqmGauge extends LitElement {
           role="img"
           aria-label="${this.name}: ${displayValue}${this.unit ? ' ' + this.unit : ''}"
         >
-          <!-- Background arc -->
-          <path
-            d="${this.arcPath}"
+          <!-- Background arc (270° sweep, gap at bottom) -->
+          <circle
+            cx="${this.cx}"
+            cy="${this.cy}"
+            r="${this.radius}"
             stroke="var(--divider-color, #e0e0e0)"
             stroke-width="${this.strokeWidth}"
             fill="none"
             stroke-linecap="round"
+            stroke-dasharray="${bgDash}"
+            transform="${rotation}"
           />
 
-          <!-- Foreground arc (stroke-dasharray shows only the filled portion) -->
-          ${this.ratio > 0 && !this.unavailable
-            ? html`
-                <path
-                  d="${this.arcPath}"
-                  stroke="${arcColor}"
-                  stroke-width="${this.strokeWidth}"
-                  fill="none"
-                  stroke-linecap="round"
-                  stroke-dasharray="${filledLen.toFixed(2)} ${totalLen.toFixed(2)}"
-                  class="arc-fill"
-                />
-              `
-            : nothing}
+          <!-- Foreground arc (filled portion) — always in DOM for SVG namespace -->
+          <circle
+            cx="${this.cx}"
+            cy="${this.cy}"
+            r="${this.radius}"
+            stroke="${arcColor}"
+            stroke-width="${this.strokeWidth}"
+            fill="none"
+            stroke-linecap="round"
+            stroke-dasharray="${fgDash}"
+            transform="${rotation}"
+            class="arc-fill"
+          />
         </svg>
 
         ${this.name
           ? html`<div class="gauge-name" style="color: ${subColor}">${this.name}</div>`
-          : nothing}
+          : ''}
       </div>
     `;
   }
