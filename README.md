@@ -1,6 +1,5 @@
-<img width="598" height="935" alt="image" src="https://github.com/user-attachments/assets/096c8355-98e6-42ea-956b-6c48fe38c82f" />
-
 # Air Quality Monitor Card
+<img width="598" height="935" alt="image" src="https://github.com/user-attachments/assets/096c8355-98e6-42ea-956b-6c48fe38c82f" />
 
 A custom [Home Assistant](https://www.home-assistant.io/) Lovelace card for monitoring air quality sensors with color-coded progress bars, severity indicators, and trend sparklines.
 
