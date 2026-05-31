@@ -14,8 +14,11 @@
     "co2"
   ],
   "module": "dist/air-quality-monitor-card.js",
-  "repository": "",
-  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_USERNAME/air-quality-monitor-card"
+  },
+  "author": "YOUR_NAME",
   "license": "MIT",
   "type": "module",
   "scripts": {

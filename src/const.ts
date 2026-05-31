@@ -95,6 +95,9 @@ export const SEVERITY_ORDER: SeverityLevel[] = [
   'good',
 ];
 
+/** Ordered severity levels (best to worst) — used by getSeverity to find the first matching threshold */
+export const SEVERITY_ORDER_ASC: SeverityLevel[] = [...SEVERITY_ORDER].reverse() as SeverityLevel[];
+
 /** Default icons for common entity types */
 export const DEFAULT_ICONS: Record<string, string> = {
   pm25: 'mdi:air-filter',
@@ -120,9 +123,8 @@ export function getSeverity(value: number | null, severity?: Record<string, numb
   }
 
   if (severity) {
-    // Iterate from best (lowest threshold) to worst (highest threshold).
-    // Return the first level whose threshold the value meets or exceeds.
-    for (const level of [...SEVERITY_ORDER].reverse()) {
+    // Iterate best-to-worst: return the first level whose threshold the value meets or exceeds.
+    for (const level of SEVERITY_ORDER_ASC) {
       const threshold = severity[level];
       if (threshold !== undefined && value <= threshold) {
         return { level, label: SEVERITY_LABELS[level], color: SEVERITY_COLORS[level] };
@@ -145,7 +147,12 @@ export function guessMetricType(entityId: string): string {
   if (lower.includes('co2') || lower.includes('carbon_dioxide')) return 'co2';
   if (lower.includes('voc') || lower.includes('volatile')) return 'voc';
   if (lower.includes('hcho') || lower.includes('formaldehyde')) return 'hcho';
-  if (lower.includes('temp')) return 'temperature';
+  // Avoid false positives like "template" or "template_sensor" matching "temp"
+  if (
+    lower.includes('temp') &&
+    !lower.includes('template') &&
+    !lower.includes('tempo')
+  ) return 'temperature';
   if (lower.includes('humid')) return 'humidity';
   if (lower.includes('aqi') || lower.includes('air_quality')) return 'aqi';
   if (lower.includes('no2') || lower.includes('nitrogen')) return 'no2';

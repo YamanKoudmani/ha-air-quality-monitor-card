@@ -1,6 +1,13 @@
 import type { HomeAssistant } from 'custom-card-helpers';
-import type { HistoryPoint, MetricEntityConfig, MetricData, SeverityInfo, TrendInfo, TrendDirection } from './types';
+import type { HistoryPoint, MetricEntityConfig, MetricData, TrendInfo } from './types';
 import { getSeverity, getDefaultIcon, getDefaultSeverityForEntity } from './const';
+
+/** HA history API response entry */
+interface HAHistoryEntry {
+  state: string;
+  last_changed?: string;
+  last_updated?: string;
+}
 
 /** Fetch entity history from HA */
 export async function fetchHistory(
@@ -12,20 +19,23 @@ export async function fetchHistory(
   const startTime = new Date(endTime.getTime() - hours * 60 * 60 * 1000);
 
   try {
-    const history: any[][] = await hass.callApi('GET',
+    const history: HAHistoryEntry[][] = await hass.callApi(
+      'GET',
       `history/period/${startTime.toISOString()}?filter_entity_id=${entityId}&minimal_response&no_attributes`,
-    ) as any;
+    ) as HAHistoryEntry[][];
 
     if (!history || !history[0] || history[0].length === 0) {
       return [];
     }
 
     return history[0]
-      .map((entry: any) => {
+      .map((entry: HAHistoryEntry) => {
         const value = parseFloat(entry.state);
         if (isNaN(value)) return null;
+        const ts = entry.last_changed || entry.last_updated;
+        if (!ts) return null;
         return {
-          timestamp: new Date(entry.last_changed || entry.last_updated).getTime(),
+          timestamp: new Date(ts).getTime(),
           value,
         } as HistoryPoint;
       })
@@ -340,15 +350,6 @@ export function generateStepSparklineAreaPath(
   const lastX = timestampToX(maxTime, minTime, maxTime, effectiveWidth, padding);
 
   return `${linePath} L ${lastX.toFixed(1)} ${height - padding} L ${padding} ${height - padding} Z`;
-}
-
-/** Debounce function */
-export function debounce<T extends (...args: any[]) => void>(fn: T, delay: number): T {
-  let timer: ReturnType<typeof setTimeout>;
-  return ((...args: any[]) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => fn(...args), delay);
-  }) as T;
 }
 
 /** Detect trend direction from history data using linear regression slope */

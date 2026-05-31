@@ -24,8 +24,6 @@ export class AirQualityMonitorCard extends LitElement {
 
   private _historyCache = new Map<string, HistoryPoint[]>();
 
-  private _loading = false;
-
   static getConfigElement(): HTMLElement {
     return document.createElement('air-quality-monitor-card-editor');
   }
@@ -61,6 +59,20 @@ export class AirQualityMonitorCard extends LitElement {
     if (!config.entities || !Array.isArray(config.entities) || config.entities.length === 0) {
       throw new Error('At least one entity must be configured');
     }
+
+    // Invalidate cache if sparkline_hours changed or entity list changed
+    const prevEntities = new Set(this._config?.entities?.map((e) => e.entity) ?? []);
+    const newEntities = new Set(config.entities.map((e) => e.entity));
+    const entitiesChanged =
+      prevEntities.size !== newEntities.size ||
+      [...prevEntities].some((e) => !newEntities.has(e));
+    if (
+      this._config?.sparkline_hours !== config.sparkline_hours ||
+      entitiesChanged
+    ) {
+      this._historyCache.clear();
+    }
+
     this._config = {
       ...config,
       columns: config.columns ?? DEFAULT_COLUMNS,
@@ -88,9 +100,6 @@ export class AirQualityMonitorCard extends LitElement {
     const needsFetch = entities.filter((e) => !this._historyCache.has(e.entity));
     if (needsFetch.length === 0) return;
 
-    this._loading = true;
-    this.requestUpdate();
-
     const promises = needsFetch.map(async (entity) => {
       try {
         const history = await fetchHistory(this.hass!, entity.entity, hours);
@@ -101,7 +110,6 @@ export class AirQualityMonitorCard extends LitElement {
     });
 
     await Promise.all(promises);
-    this._loading = false;
     this.requestUpdate();
   }
 

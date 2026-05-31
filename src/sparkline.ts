@@ -4,10 +4,7 @@ import type { HistoryPoint } from './types';
 import { generateSparklinePath, generateSparklineAreaPath, generateSmoothSparklinePath, generateSmoothSparklineAreaPath, generateStepSparklinePath, generateStepSparklineAreaPath } from './utils';
 import { getSeverity, SEVERITY_COLORS, SEVERITY_ORDER } from './const';
 
-let instanceCounter = 0;
-
-/**
- * Sparkline trend graph component (aqm-sparkline)
+/** Sparkline trend graph component (aqm-sparkline)
  *
  * Displays an SVG sparkline with per-point coloring via a horizontal
  * linearGradient on the line stroke. Falls back to a solid color line
@@ -35,8 +32,8 @@ export class AqmSparkline extends LitElement {
   @property({ type: Number }) timeStart: number | undefined = undefined;
   @property({ type: Number }) timeEnd: number | undefined = undefined;
 
-  private areaGradientId = `spark-area-${++instanceCounter}`;
-  private lineGradientId = `spark-line-${instanceCounter}`;
+  private areaGradientId = `spark-area-${crypto.randomUUID()}`;
+  private lineGradientId = `spark-line-${crypto.randomUUID()}`;
 
   /** Get the effective time range for the x-axis */
   private get effectiveTimeStart(): number {

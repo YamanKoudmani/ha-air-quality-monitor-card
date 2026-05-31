@@ -17,7 +17,6 @@ import {
   guessMetricType,
   getDefaultIcon,
   SEVERITY_COLORS,
-  SEVERITY_ORDER,
   DEFAULT_SEVERITIES,
   DEFAULT_COLUMNS,
 } from '../const';
@@ -245,7 +244,6 @@ describe('generateSparklinePath', () => {
       { timestamp: 360, value: 15 },
     ];
     const path = generateSparklinePath(points, 120, 40);
-    const coords = path.split(' ').filter(cmd => cmd === 'M' || cmd === 'L' || !isNaN(parseFloat(cmd)));
     // Parse x positions from the path
     const moves = path.match(/[ML]\s+[\d.]+\s+[\d.]+/g);
     expect(moves).toHaveLength(3);
